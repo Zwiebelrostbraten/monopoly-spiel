@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch({headless:true, executablePath:process.env.CHROMIUM_PATH, args:['--no-sandbox']});
-const page = await browser.newPage({reducedMotion:'reduce'});
+const page = await browser.newPage({reducedMotion:'reduce',colorScheme:process.env.THEME || 'light'});
 const dir = process.env.SCREENSHOT_DIR;
 if (dir) await mkdir(dir,{recursive:true});
 const geometry = (surface) => checkGeometry(page, surface);

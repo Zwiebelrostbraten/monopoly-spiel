@@ -14,6 +14,7 @@ const browser = await chromium.launch({
 const context = await browser.newContext({
   viewport: { width: 1440, height: 1000 },
   reducedMotion: "reduce",
+  colorScheme: process.env.THEME || "light",
 });
 const page = await context.newPage();
 const errors = [];
@@ -115,6 +116,8 @@ try {
       localStorage.getItem("stadtvermoegen-v1"),
     );
     await page.reload();
+    await page.locator('#themeButton').click();
+    await page.locator('#themeButton').click();
     assert.equal(
       await page.evaluate(() => localStorage.getItem("stadtvermoegen-v1")),
       beforeLegacy,
@@ -411,6 +414,11 @@ try {
   await fixture();
   await click("roll");
   const duringShake = await saved();
+  const rawDuringShake = await page.evaluate(()=>localStorage.getItem('stadtvermoegen-v1'));
+  await page.evaluate(()=>{window.rollingDie=document.querySelector('.die');});
+  await page.locator('#themeButton').click();
+  assert.ok(await page.evaluate(()=>window.rollingDie===document.querySelector('.die')), 'theme preserves animation nodes');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('stadtvermoegen-v1')),rawDuringShake);
   await page.reload();
   assert.deepEqual((await saved()).dice, duringShake.dice);
   assert.equal((await saved()).phase, "buy");
