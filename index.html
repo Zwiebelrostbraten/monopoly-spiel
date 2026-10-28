@@ -3,13 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#173d35" />
+    <meta name="theme-color" content="#edf2f4" />
     <meta
       name="description"
       content="Ein eigenständig gestaltetes deutsches Immobilien-Brettspiel für 2–4 Personen am selben Gerät."
     />
     <title>Stadtvermögen · Ein Abend am Spielbrett</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -19,7 +20,8 @@
           >DAS IMMOBILIENSPIEL</span
         ></a
       >
-      <nav>
+      <nav aria-label="Spiel und Darstellung">
+        <button id="themeButton" class="quiet" data-theme-toggle>Dunkelmodus</button>
         <button id="rulesButton" class="quiet">Spielregeln</button
         ><button id="soundButton" class="quiet" aria-pressed="false">
           Ton aus</button

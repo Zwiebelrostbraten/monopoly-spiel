@@ -7,6 +7,9 @@ const $ = (s) => document.querySelector(s),
   content = $("#detailContent");
 const KEY = "stadtvermoegen-v1",
   palette = ["#a8563f", "#436f9b", "#9a6b9e", "#537f59"];
+// Shared display palette only; stored estates and rule data keep their original values.
+const propertyColors = ["#965234", "#38b9df", "#d843a1", "#f18e22", "#dd3545", "#e3c52b", "#239064", "#315cae"];
+const propertyColor = b => b.type === "street" ? propertyColors[b.group] : "#71878c";
 const esc = (x) =>
   String(x).replace(
     /[&<>"']/g,
@@ -91,7 +94,7 @@ function beep() {
   } catch {}
 }
 function setup() {
-  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">STADTVERMÖGEN</p><h1>Spiel einrichten.</h1><p>Kauft Grundstücke, handelt und baut. Spielt zu zweit, zu dritt oder zu viert an einem Gerät.</p><p class="muted">Lokal gespeichert · Ohne Anmeldung</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#925d43">BADSTRASSE<span>${fieldSVG("house")}</span></div><div class="mini-deed" style="--stripe:#57967c">RATHAUSPLATZ<span>${fieldSVG("hotel")}</span></div><div class="mini-deed" style="--stripe:#526ca8">SCHLOSSALLEE<span>${figureSVG("hat")}</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">NEUES SPIEL</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted form-note">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
+  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">STADTVERMÖGEN</p><h1>Spiel einrichten.</h1><p>Kauft Grundstücke, handelt und baut. Spielt zu zweit, zu dritt oder zu viert an einem Gerät.</p><p class="muted">Lokal gespeichert · Ohne Anmeldung</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#965234">BADSTRASSE<span>${fieldSVG("house")}</span></div><div class="mini-deed" style="--stripe:#239064">RATHAUSPLATZ<span>${fieldSVG("hotel")}</span></div><div class="mini-deed" style="--stripe:#315cae">SCHLOSSALLEE<span>${figureSVG("hat")}</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">NEUES SPIEL</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted form-note">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
   let choices = avatars.slice(0, 4).map((a) => a.id);
   const inputs = () => {
     const previous = [...document.querySelectorAll(".name-input")].map(
@@ -190,7 +193,7 @@ function boardHTML() {
               : null,
           )
           .filter((i) => i !== null);
-      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""} ${occupants.length > 2 ? "crowded" : ""}" style="--row:${r};--column:${c};--stripe:${b.color || "#7e9380"};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || fieldSVG("house")}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? fieldSVG("hotel") : fieldSVG("house").repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "Direkt +400" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
+      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""} ${occupants.length > 2 ? "crowded" : ""}" style="--row:${r};--column:${c};--stripe:${propertyColor(b)};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || fieldSVG("house")}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? fieldSVG("hotel") : fieldSVG("house").repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "Direkt +400" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
     })
     .join(
       "",
@@ -250,7 +253,7 @@ function render() {
       .filter(([, e]) => e.owner === selected)
       .map(
         ([id, e]) =>
-          `<button class="deed-chip" style="--stripe:${board[id].color || "#7e9380"}" data-square="${id}">${esc(board[id].name)}<small>${e.mortgage ? "Hypothek" : e.level === 5 ? "1 Hotel" : e.level ? e.level + " Häuser" : "Unbebaut"} · ${money(board[id].price)}</small></button>`,
+          `<button class="deed-chip" style="--stripe:${propertyColor(board[id])}" data-square="${id}">${esc(board[id].name)}<small>${e.mortgage ? "Hypothek" : e.level === 5 ? "1 Hotel" : e.level ? e.level + " Häuser" : "Unbebaut"} · ${money(board[id].price)}</small></button>`,
       )
       .join("") ||
     '<p class="muted">Noch keine Grundstücke im Besitz.</p>'
@@ -260,6 +263,9 @@ function render() {
     .join(
       "",
     )}</ol></section></aside></div><span class="board-live" role="status">${esc(p.name)}, ${esc(board[p.pos].name)}.</span>`;
+  // Keep keyboard and reading order aligned with the compact layout.
+  const layout = app.querySelector(".game-layout");
+  layout.replaceChildren(...[".board-wrap", ".turn-panel", ".players-panel", ".asset-panel", ".log-panel"].map(selector => layout.querySelector(selector)));
   app
     .querySelectorAll("[data-square]")
     .forEach((el) => (el.onclick = () => showDeed(Number(el.dataset.square))));
@@ -325,7 +331,7 @@ function showDeed(id) {
   if (b.type === "street")
     rows.splice(1, 0, ["Vollständige Farbgruppe", b.rents[0] * 2]);
   open(
-    `<div class="deed-color" style="--stripe:${b.color || "#7e9380"}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + token(e.owner) + " " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil((b.price * 11) / 20))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
+    `<div class="deed-color" style="--stripe:${propertyColor(b)}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + token(e.owner) + " " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil((b.price * 11) / 20))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
   );
   content.querySelectorAll("[data-manage]").forEach(
     (el) =>
@@ -582,7 +588,7 @@ function exploreBoard() {
     `<p class="eyebrow">DAS BRETT IM DETAIL</p><h2>Alle 40 Felder</h2><div class="field-list">${board
       .map((b) => {
         const e = state.estates[b.id];
-        return `<button data-field="${b.id}" style="--stripe:${b.color || "#9baa8d"}"><span class="field-number">${icons[b.type] || fieldSVG("house")}</span><span>${esc(b.name)}<small>${e?.owner !== null && e ? esc(state.players[e.owner].name) + (e.mortgage ? " · Hypothek" : "") : e ? "Bank" : b.type === "tax" ? "Steuer" : ""}</small></span>${b.price ? `<strong>${money(b.price)}</strong>` : ""}</button>`;
+        return `<button data-field="${b.id}" style="--stripe:${propertyColor(b)}"><span class="field-number">${icons[b.type] || fieldSVG("house")}</span><span>${esc(b.name)}<small>${e?.owner !== null && e ? esc(state.players[e.owner].name) + (e.mortgage ? " · Hypothek" : "") : e ? "Bank" : b.type === "tax" ? "Steuer" : ""}</small></span>${b.price ? `<strong>${money(b.price)}</strong>` : ""}</button>`;
       })
       .join("")}</div>`,
   );
