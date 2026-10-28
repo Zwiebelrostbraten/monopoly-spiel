@@ -5,7 +5,7 @@ export const active=s=>s.players.map((p,i)=>p.out?null:i).filter(i=>i!==null);
 export function createGame(players,rng=Math.random){
  require(players.length>=2&&players.length<=4,'2–4 Personen erforderlich.');
  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
- return {version:1,players:players.map(p=>({...p,cash:1500,pos:0,jail:null,cards:[],out:false})),estates:Object.fromEntries(board.filter(b=>['street','rail','utility'].includes(b.type)).map(b=>[b.id,{owner:null,level:0,mortgage:false}])),current:0,phase:'roll',doubles:0,extra:false,dice:[1,1],houses:32,hotels:12,decks:Object.fromEntries(Object.entries(decks).map(([k,v])=>[k,shuffle(v.map((_,i)=>i))])),queue:[],log:['Willkommen! Die erste Person beginnt.'],round:1,card:null,auction:null,trade:null};
+ return {version:1,players:players.map(p=>({...p,cash:1500,pos:0,jail:null,cards:[],out:false})),estates:Object.fromEntries(board.filter(b=>['street','rail','utility'].includes(b.type)).map(b=>[b.id,{owner:null,level:0,mortgage:false}])),current:0,phase:'roll',doubles:0,extra:false,dice:[1,1],houses:32,hotels:12,decks:Object.fromEntries(Object.entries(decks).map(([k,v])=>[k,shuffle(v.map((_,i)=>i))])),queue:[],log:['Willkommen zum Spielabend!'],round:1,card:null,auction:null,trade:null};
 }
 export function log(s,t){s.log.push(t);if(s.log.length>150)s.log.shift()}
 const group=(s,id)=>board.filter(b=>b.type==='street'&&b.group===board[id].group).map(b=>b.id);
@@ -51,14 +51,16 @@ export function run(s,rng=Math.random){
  else if(b.type==='gojail')jail(s,t.player);
  else if(b.type==='chance'||b.type==='community'){cardEffect(s,b.type,t.player);if(s.phase==='card')return}
  }else if(t.type==='applyCard'){applyCard(s,t.deck,t.index,t.player);
- }else if(t.type==='resume'){s.phase=t.phase;return;
+ }else if(t.type==='transferMortgage'){if(!s.players[t.player].out&&s.estates[t.id].owner===t.player){s.transfer=t;s.phase='transfer';return;}
+ }else if(t.type==='clearMortgage'){s.estates[t.id].mortgage=false;
+ }else if(t.type==='resume'){s.phase=s.players[s.current].out?'end':t.phase;return;
  }else if(t.type==='jailMove'){s.players[t.player].jail=null;enqueue(s,{type:'move',player:t.player,target:(s.players[t.player].pos+t.steps)%40})}
  else if(t.type==='auction'){auction(s,t.id);return}
  else if(t.type==='finish'){s.phase=s.extra?'roll':'end';return}
  }
  if(s.phase!=='won')s.phase=s.extra?'roll':'end';
 }
-function manage(s,action,{id,player}){const b=board[id],e=s.estates[id],p=s.players[player];require(e&&e.owner===player&&!p.out,'Dieses Grundstück gehört dir nicht.');require(!s.trade&&!s.auction,'Zuerst Handel oder Auktion abschließen.');if(s.debt)require(s.debt.from===player&&['sell','mortgage'].includes(action),'Nur die zahlungspflichtige Person kann jetzt Geld beschaffen.');
+function manage(s,action,{id,player}){const b=board[id],e=s.estates[id],p=s.players[player];require(e&&e.owner===player&&!p.out,'Dieses Grundstück gehört dir nicht.');require(!s.trade&&!s.auction,'Zuerst Handel oder Auktion abschließen.');if(s.debt)require(s.debt.from===player&&['sell','sellGroup','mortgage'].includes(action),'Nur die zahlungspflichtige Person kann jetzt Geld beschaffen.');
  const g=b.type==='street'?group(s,id):[id];
  if(action==='build'){
  require(b.type==='street'&&complete(s,id,player)&&g.every(i=>!s.estates[i].mortgage),'Eine vollständige, unbelastete Farbgruppe ist nötig.');
@@ -79,7 +81,7 @@ function manage(s,action,{id,player}){const b=board[id],e=s.estates[id],p=s.play
 function validateTrade(s,t){require(t.from!==t.to&&active(s).includes(t.from)&&active(s).includes(t.to),'Zwei aktive Personen wählen.');for(const [p,ids,cash,cards] of [[t.from,t.give,t.cashGive,t.cardsGive],[t.to,t.take,t.cashTake,t.cardsTake]]){require(Number.isInteger(cash)&&cash>=0&&cash<=s.players[p].cash,'Bargeld im Handel ist nicht verfügbar.');require(new Set(ids).size===ids.length,'Grundstück doppelt gewählt.');for(const id of ids){require(s.estates[id]?.owner===p,'Eigentum im Handel ungültig.');require(board[id].type!=='street'||group(s,id).every(i=>s.estates[i].level===0),'Vor dem Handel alle Gebäude der Farbgruppe verkaufen.')}const copy=[...s.players[p].cards];for(const k of cards){const i=copy.indexOf(k);require(i>=0,'Frei-Karte nicht verfügbar.');copy.splice(i,1)}}}
 function returnCards(s,p){for(const k of s.players[p].cards)s.decks[k].push(decks[k].findIndex(c=>c.free));s.players[p].cards=[]}
 export function act(s,action,args={},rng=Math.random){
- require(s.phase!=='won','Das Spiel ist beendet.');
+ require(s.phase!=='won','Das Spiel ist beendet.');require(!s.trade||['acceptTrade','rejectTrade'].includes(action),'Zuerst das Handelsangebot annehmen oder ablehnen.');
  if(['build','sell','sellGroup','mortgage','unmortgage'].includes(action)){manage(s,action,args);return s}
  const p=s.players[s.current];
  if(action==='roll'){
@@ -106,14 +108,18 @@ export function act(s,action,args={},rng=Math.random){
  require(s.phase==='debt','Keine unbezahlbare Forderung offen.');const d=s.debt,loser=s.players[d.from],credit=d.to;
  // Sell all buildings to the bank at half price before transfer.
  for(const [id,e] of Object.entries(s.estates))if(e.owner===d.from){loser.cash+=e.level*(board[id].build||0)/2;if(e.level===5)s.hotels++;else s.houses+=e.level;e.level=0}
- // A player able to settle after liquidation must pay rather than declare bankruptcy.
+ // Available mortgage equity must be used when it prevents elimination.
+ const available=Object.entries(s.estates).filter(([,e])=>e.owner===d.from&&!e.mortgage);
+ if(loser.cash+available.reduce((n,[id])=>n+board[id].price/2,0)>=d.amount){for(const [id,e] of available){if(loser.cash>=d.amount)break;e.mortgage=true;loser.cash+=board[id].price/2;log(s,`${loser.name} nimmt zur Schuldentilgung eine Hypothek auf ${board[id].name} auf.`)}}
  if(loser.cash>=d.amount){run(s,rng);return s}
  if(credit!==null)s.players[credit].cash+=loser.cash;loser.cash=0;loser.out=true;const tasks=[];
- for(const [id,e] of Object.entries(s.estates))if(e.owner===d.from){e.owner=credit;if(credit===null){e.mortgage=false;tasks.push({type:'auction',id:Number(id)})}else if(e.mortgage)tasks.push(payment(credit,null,Math.ceil(board[id].price*.05),'Übernahmezinsen · '+board[id].name))}
+ for(const [id,e] of Object.entries(s.estates))if(e.owner===d.from){e.owner=credit;if(credit===null){e.mortgage=false;tasks.push({type:'auction',id:Number(id)})}else if(e.mortgage)tasks.push({type:'transferMortgage',player:credit,id:Number(id)})}
  if(credit!==null){s.players[credit].cards.push(...loser.cards);loser.cards=[]}else returnCards(s,d.from);
- s.queue.shift();s.debt=null;s.extra=false;log(s,`${loser.name} ist bankrott und scheidet aus.`);
+ s.queue.shift();s.debt=null;if(d.from===s.current)s.extra=false;log(s,`${loser.name} ist bankrott und scheidet aus.`);
  if(active(s).length===1){s.winner=active(s)[0];s.phase='won';s.queue=[];return s}
  enqueue(s,...tasks);if(!s.queue.some(t=>t.type==='finish'))s.queue.push({type:'finish'});run(s,rng);
+ }else if(action==='transferKeep'||action==='transferRedeem'){
+ require(s.phase==='transfer'&&s.transfer,'Keine Hypothekenübernahme offen.');const t=s.transfer,b=board[t.id];s.transfer=null;const amount=action==='transferRedeem'?Math.ceil(b.price*.55):Math.ceil(b.price*.05);enqueue(s,payment(t.player,null,amount,action==='transferRedeem'?'Hypothek sofort ablösen':'Übernahmezinsen'),...(action==='transferRedeem'?[{type:'clearMortgage',id:t.id}]:[]));run(s,rng);
  }else if(action==='buildingAuction'){
  require(['roll','end'].includes(s.phase)&&!s.trade,'Zuerst die laufende Aktion abschließen.');const hotel=args.kind==='hotel';require((hotel?s.hotels:s.houses)===1,'Nur das letzte verfügbare Gebäude wird versteigert.');require(args.entries?.length>=2,'Mindestens zwei Personen müssen ein Gebäude wünschen.');const seen=new Set();
  for(const {player,id} of args.entries){const e=s.estates[id];require(!seen.has(player)&&active(s).includes(player),'Jede aktive Person darf genau einmal teilnehmen.');seen.add(player);require(board[id]?.type==='street'&&e.owner===player&&complete(s,id,player),'Vollständige eigene Farbgruppe erforderlich.');const g=group(s,id);require(g.every(i=>!s.estates[i].mortgage)&&e.level===Math.min(...g.map(i=>s.estates[i].level))&&e.level===(hotel?4:e.level)&&e.level<(hotel?5:4),'Das gewählte Grundstück kann dieses Gebäude nicht erhalten.');require(s.players[player].cash>=10,'Mindestens 10 Bargeld pro Person erforderlich.');}
@@ -123,8 +129,19 @@ export function act(s,action,args={},rng=Math.random){
  }else if(action==='rejectTrade'){require(s.trade,'Kein Angebot offen.');s.trade=null;
  }else if(action==='acceptTrade'){
  const t=s.trade;require(t,'Kein Angebot offen.');validateTrade(s,t);const tasks=[];
- for(const [from,to,ids,cash,cards] of [[t.from,t.to,t.give,t.cashGive,t.cardsGive],[t.to,t.from,t.take,t.cashTake,t.cardsTake]]){s.players[from].cash-=cash;s.players[to].cash+=cash;for(const id of ids){s.estates[id].owner=to;if(s.estates[id].mortgage)tasks.push(payment(to,null,Math.ceil(board[id].price*.05),'Übernahmezinsen · '+board[id].name))}for(const k of cards){s.players[from].cards.splice(s.players[from].cards.indexOf(k),1);s.players[to].cards.push(k)}}
+ for(const [from,to,ids,cash,cards] of [[t.from,t.to,t.give,t.cashGive,t.cardsGive],[t.to,t.from,t.take,t.cashTake,t.cardsTake]]){s.players[from].cash-=cash;s.players[to].cash+=cash;for(const id of ids){s.estates[id].owner=to;if(s.estates[id].mortgage)tasks.push({type:'transferMortgage',player:to,id})}for(const k of cards){s.players[from].cards.splice(s.players[from].cards.indexOf(k),1);s.players[to].cards.push(k)}}
  s.trade=null;log(s,`${s.players[t.from].name} und ${s.players[t.to].name} schließen ihren Handel ab.`);if(tasks.length){if(!s.queue.length)s.queue.push({type:'resume',phase:s.phase});enqueue(s,...tasks);run(s,rng)}else if(s.debt)run(s,rng);
  }else throw Error('Unbekannte Aktion.');
  return s;
+}
+
+// Run only when a new table is created, never when restoring a save.
+export function chooseStarter(s,rng=Math.random){
+ let candidates=active(s);
+ for(let attempt=0;attempt<100;attempt++){
+ const results=candidates.map(player=>{const dice=[1+Math.floor(rng()*6),1+Math.floor(rng()*6)];log(s,`${s.players[player].name}: Startwurf ${dice.join(' + ')}.`);return {player,total:dice[0]+dice[1]}});
+ const high=Math.max(...results.map(r=>r.total));candidates=results.filter(r=>r.total===high).map(r=>r.player);
+ if(candidates.length===1){s.current=candidates[0];log(s,`${s.players[s.current].name} beginnt mit dem höchsten Startwurf.`);return s.current}
+ }
+ throw Error('Startwürfe konnten nicht entschieden werden.');
 }
