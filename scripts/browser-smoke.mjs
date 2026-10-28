@@ -226,9 +226,32 @@ try {
   const before = await saved();
   await page.reload();
   assert.deepEqual((await saved()).auction, before.auction);
+  // Also exercise actual animation and interruption: the result is saved before the shake.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await fixture();
+  await click("roll");
+  assert.equal((await saved()).players[0].pos, 3);
+  assert.equal(await page.locator(".die.rolling").count(), 2);
+  await page.waitForFunction(
+    () => !document.querySelector('[data-action="buy"]').disabled,
+  );
+  assert.equal(
+    await page.locator('.square[data-square="3"] .token').count(),
+    1,
+  );
+  await fixture();
+  await click("roll");
+  const duringShake = await saved();
+  await page.reload();
+  assert.deepEqual((await saved()).dice, duringShake.dice);
+  assert.equal((await saved()).phase, "buy");
+  assert.equal(
+    (await saved()).log.filter((l) => l.includes("würfelt")).length,
+    1,
+  );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest, jail debt, card movement, bankruptcy/win, save/reload, desktop/390/320 layouts. No console, page or HTTP errors.",
+    "PASS: setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest, jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
   );
 } finally {
   await browser.close();

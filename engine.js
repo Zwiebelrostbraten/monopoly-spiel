@@ -345,7 +345,7 @@ function manage(s, action, { id, player }) {
     e.mortgage = true;
     p.cash += b.price / 2;
   } else if (action === "unmortgage") {
-    const amount = Math.ceil(b.price * 0.55);
+    const amount = Math.ceil((b.price * 11) / 20);
     ensure(
       e.mortgage && p.cash >= amount,
       "Hypothek fehlt oder Bargeld reicht nicht.",
@@ -623,8 +623,8 @@ export function act(s, action, args = {}, rng = Math.random) {
     s.transfer = null;
     const amount =
       action === "transferRedeem"
-        ? Math.ceil(b.price * 0.55)
-        : Math.ceil(b.price * 0.05);
+        ? Math.ceil((b.price * 11) / 20)
+        : Math.ceil(b.price / 20);
     enqueue(
       s,
       payment(

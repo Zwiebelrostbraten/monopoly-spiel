@@ -64,8 +64,9 @@ test("three failed jail attempts fine and move, no bonus roll", () => {
 test("released jail doubles do not grant extra roll", () => {
   let s = game();
   s.players[0].jail = 0;
+  s.players[0].pos = 10;
   act(s, "roll", { dice: [5, 5] });
-  assert.equal(s.players[0].pos, 10);
+  assert.equal(s.players[0].pos, 20);
   assert.equal(s.phase, "end");
 });
 test("auction includes decliner, constrains bids, passes and awards", () => {
@@ -493,4 +494,34 @@ test("scarce stock with three applicants and two houses can be auctioned one by 
   assert.equal(s.houses, 1);
   assert.equal(s.estates[1].level, 1);
   assert.equal(s.phase, "roll");
+});
+
+test("mortgage redemption uses exact integer ratios before rounding, including stations", () => {
+  const expected = new Map([
+    [1, 33],
+    [3, 33],
+    [5, 110],
+    [6, 55],
+    [9, 66],
+    [11, 77],
+    [12, 83],
+    [14, 88],
+    [16, 99],
+    [19, 110],
+    [21, 121],
+    [24, 132],
+    [26, 143],
+    [29, 154],
+    [31, 165],
+    [34, 176],
+    [37, 193],
+    [39, 220],
+  ]);
+  for (const [id, cost] of expected) {
+    const s = game();
+    own(s, [id]);
+    s.estates[id].mortgage = true;
+    act(s, "unmortgage", { id, player: 0 });
+    assert.equal(s.players[0].cash, 1500 - cost, board[id].name);
+  }
 });

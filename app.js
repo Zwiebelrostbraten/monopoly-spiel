@@ -44,6 +44,7 @@ try {
     "Der gespeicherte Spielstand konnte nicht geladen werden. Ein neues Spiel ist möglich.",
   );
 }
+if (state) selected = state.current;
 function toast(text) {
   $("#toast").textContent = text;
   $("#toast").classList.add("show");
@@ -179,7 +180,7 @@ function actionsHTML() {
   if (state.phase === "transfer") {
     const t = state.transfer,
       b = board[t.id];
-    return `<p class="eyebrow">HYPOTHEK ÜBERNOMMEN</p><h3>${esc(state.players[t.player].name)} · ${esc(b.name)}</h3><p class="action-message">Wähle jetzt: die Hypothek sofort für ${money(Math.ceil(b.price * 0.55))} ablösen oder sie behalten und ${money(Math.ceil(b.price * 0.05))} Übernahmezinsen zahlen. Späteres Ablösen kostet zusätzlich den normalen Ablösebetrag.</p><div class="action-buttons">${button("Sofort ablösen", "transferRedeem", "primary")}${button("Belastet behalten", "transferKeep")}</div>`;
+    return `<p class="eyebrow">HYPOTHEK ÜBERNOMMEN</p><h3>${esc(state.players[t.player].name)} · ${esc(b.name)}</h3><p class="action-message">Wähle jetzt: die Hypothek sofort für ${money(Math.ceil((b.price * 11) / 20))} ablösen oder sie behalten und ${money(Math.ceil(b.price / 20))} Übernahmezinsen zahlen. Späteres Ablösen kostet zusätzlich den normalen Ablösebetrag.</p><div class="action-buttons">${button("Sofort ablösen", "transferRedeem", "primary")}${button("Belastet behalten", "transferKeep")}</div>`;
   }
   if (state.phase === "auction") {
     const a = state.auction;
@@ -242,6 +243,11 @@ function wireActions(root) {
 }
 function open(html) {
   content.innerHTML = html;
+  const heading = content.querySelector("h2");
+  if (heading) {
+    heading.id = "detailTitle";
+    detail.setAttribute("aria-labelledby", "detailTitle");
+  }
   wireActions(content);
   if (!detail.open) detail.showModal();
 }
@@ -279,7 +285,7 @@ function showDeed(id) {
   if (b.type === "street")
     rows.splice(1, 0, ["Vollständige Farbgruppe", b.rents[0] * 2]);
   open(
-    `<div class="deed-color" style="--stripe:${b.color || "#7e9380"}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil(b.price * 0.55))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
+    `<div class="deed-color" style="--stripe:${b.color || "#7e9380"}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil((b.price * 11) / 20))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
   );
   content.querySelectorAll("[data-manage]").forEach(
     (el) =>

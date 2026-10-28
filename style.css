@@ -1274,3 +1274,35 @@ dialog p {
     display: none;
   }
 }
+@media (max-width: 560px) {
+  .square.corner .sq-price,
+  .square.occupied .sq-price {
+    display: none;
+  }
+  .square.occupied .sq-icon {
+    display: none;
+  }
+  .square.occupied {
+    justify-content: center;
+    gap: 1px;
+  }
+  .square.occupied .sq-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1;
+  }
+  .square .tokens {
+    flex-wrap: nowrap;
+    width: 100%;
+    min-height: 9px;
+  }
+  .square .token {
+    width: 9px;
+    height: 9px;
+    min-width: 0;
+    flex: 0 1 9px;
+    font-size: 6px;
+  }
+}

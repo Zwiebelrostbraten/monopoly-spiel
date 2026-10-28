@@ -67,7 +67,7 @@ node --check engine.js
 
 `engine.js` contains the serializable rule model and action queue; `data.js` contains board/deck facts; `app.js` binds the model to the UI. `act(state, 'roll', {dice: [1, 2]})` provides deterministic dice, and a fourth RNG argument controls utility rolls and other random actions. `createGame` accepts an RNG for deck shuffling. The UI uses copy-then-commit actions so a rejected command never partially changes the saved state.
 
-The suite covers 35 focused model cases, one static entry check and a simulation test executing **24 seeded complete 2–4-player games**. The simulation's test-only policy includes consenting consolidation trades to encourage completion; it is not shipped as an AI opponent. It checks cash, deed ownership, 32/12 stock, card conservation, save/restore and a terminal winner after each action.
+The suite covers 37 focused model cases, one static entry check and a simulation test executing **24 seeded complete 2–4-player games**. The simulation's test-only policy includes consenting consolidation trades to encourage completion; it is not shipped as an AI opponent. It checks cash, deed ownership, 32/12 stock, card conservation, save/restore and a terminal winner after each action.
 
 Optional real-browser verification uses Playwright installed **outside** the repository:
 
