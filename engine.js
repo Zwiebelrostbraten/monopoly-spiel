@@ -175,6 +175,11 @@ function applyCard(s, k, index, p) {
     );
 }
 export function run(s, rng = Math.random) {
+  // The transfer task has left the queue, but its decision must finish first.
+  if (s.transfer) {
+    s.phase = "transfer";
+    return;
+  }
   while (s.queue.length) {
     const t = s.queue[0];
     if (t.type === "pay") {

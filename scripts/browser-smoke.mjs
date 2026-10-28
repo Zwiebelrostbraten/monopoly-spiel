@@ -131,6 +131,56 @@ try {
   await click("transferRedeem");
   assert.equal((await saved()).players[1].cash, 1467);
   assert.equal((await saved()).estates[1].mortgage, false);
+  // Fundraising during an accepted mortgage trade must preserve the transfer choice.
+  for (const decision of ["transferKeep", "transferRedeem"]) {
+    for (const recipientCash of [1500, 0]) {
+      const debt = { type: "pay", from: 0, to: 2, amount: 100, reason: "Miete" };
+      await fixture({
+        state: { phase: "debt", debt, queue: [debt, { type: "finish" }] },
+        players: { 0: { cash: 0 }, 1: { cash: recipientCash } },
+        estates: {
+          1: { owner: 0, mortgage: true },
+          39: { owner: 0 },
+          37: { owner: 1 },
+        },
+      });
+      await click("openTrade");
+      await page.locator('input[name="property0"][value="1"]').check();
+      await page.locator('#tradeForm button[type="submit"]').click();
+      await click("acceptTrade");
+      assert.equal((await saved()).phase, "transfer");
+      await page.locator('.square[data-square="39"]').click();
+      await page.locator('[data-manage="mortgage"]').click();
+      let s = await saved();
+      assert.equal(s.phase, "transfer");
+      assert.equal(s.transfer.player, 1);
+      assert.deepEqual(s.debt, debt);
+      assert.equal(s.players[2].cash, 1500);
+      await page.keyboard.press("Escape");
+      // Save/reload must keep the same unresolved decision.
+      await page.reload();
+      await click(decision);
+      if (recipientCash === 0) {
+        s = await saved();
+        assert.equal(s.phase, "debt");
+        assert.equal(s.debt.from, 1);
+        assert.equal(s.transfer, null);
+        await page.locator('.square[data-square="37"]').click();
+        await page.locator('[data-manage="mortgage"]').click();
+        await page.keyboard.press("Escape");
+      }
+      s = await saved();
+      assert.equal(s.phase, "end");
+      assert.equal(s.transfer, null);
+      assert.equal(s.debt, null);
+      assert.equal(s.players[0].cash, 100);
+      assert.equal(s.players[1].cash,
+        (recipientCash || 175) - (decision === "transferKeep" ? 3 : 33));
+      assert.equal(s.players[2].cash, 1600);
+      assert.equal(s.estates[1].mortgage, decision === "transferKeep");
+      assert.deepEqual(s.queue, []);
+    }
+  }
   // A third jail miss pauses on the fine, then resumes exactly once after mortgaging.
   await fixture({
     players: { 0: { cash: 0, pos: 10, jail: 2 } },
@@ -251,7 +301,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest, jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
+    "PASS: setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest and debt precedence (4 variants with reload), jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
   );
 } finally {
   await browser.close();

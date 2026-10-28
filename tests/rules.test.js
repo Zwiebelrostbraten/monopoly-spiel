@@ -525,3 +525,77 @@ test("mortgage redemption uses exact integer ratios before rounding, including s
     assert.equal(s.players[0].cash, 1500 - cost, board[id].name);
   }
 });
+
+for (const decision of ["transferKeep", "transferRedeem"]) {
+  for (const raiseBeforeDecision of [false, true]) {
+    test(`pending mortgage transfer takes precedence over original debt: ${decision}, raise=${raiseBeforeDecision}`, () => {
+      const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
+      own(s, [1, 39]);
+      s.estates[1].mortgage = true;
+      s.players[0].cash = 0;
+      s.queue = [{ type: "pay", from: 0, to: 2, amount: 100 }, { type: "finish" }];
+      run(s);
+      const debt = s.debt;
+      act(s, "trade", {
+        from: 0, to: 1, give: [1], take: [], cashGive: 0, cashTake: 0,
+        cardsGive: [], cardsTake: [],
+      });
+      act(s, "acceptTrade");
+      const transfer = s.transfer;
+      if (raiseBeforeDecision) act(s, "mortgage", { id: 39, player: 0 });
+      run(s);
+      assert.equal(s.phase, "transfer");
+      assert.equal(s.transfer, transfer);
+      assert.equal(s.debt, debt);
+      assert.equal(s.players[2].cash, 1500);
+      assert.equal(s.players[1].cash, 1500);
+      act(s, decision);
+      assert.equal(s.transfer, null);
+      assert.equal(s.players[1].cash, decision === "transferKeep" ? 1497 : 1467);
+      assert.equal(s.estates[1].mortgage, decision === "transferKeep");
+      if (!raiseBeforeDecision) {
+        assert.equal(s.phase, "debt");
+        assert.equal(s.debt, debt);
+        act(s, "mortgage", { id: 39, player: 0 });
+      }
+      assert.equal(s.phase, "end");
+      assert.equal(s.debt, null);
+      assert.equal(s.players[2].cash, 1600);
+      assert.equal(s.players[0].cash, 100);
+      assert.deepEqual(s.queue, []);
+    });
+  }
+}
+
+for (const decision of ["transferKeep", "transferRedeem"]) {
+  test(`transfer decision debt permits recipient fundraising and resumes original debt: ${decision}`, () => {
+    const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
+    own(s, [1, 39]);
+    own(s, [37], 1);
+    s.estates[1].mortgage = true;
+    s.players[0].cash = s.players[1].cash = 0;
+    s.queue = [{ type: "pay", from: 0, to: 2, amount: 100 }, { type: "finish" }];
+    run(s);
+    const debt = s.debt;
+    act(s, "trade", {
+      from: 0, to: 1, give: [1], take: [], cashGive: 0, cashTake: 0,
+      cardsGive: [], cardsTake: [],
+    });
+    act(s, "acceptTrade");
+    act(s, decision);
+    assert.equal(s.transfer, null);
+    assert.equal(s.phase, "debt");
+    assert.equal(s.debt.from, 1);
+    assert.throws(() => act(s, "mortgage", { id: 39, player: 0 }));
+    act(s, "mortgage", { id: 37, player: 1 });
+    assert.equal(s.players[1].cash, 175 - (decision === "transferKeep" ? 3 : 33));
+    assert.equal(s.estates[1].mortgage, decision === "transferKeep");
+    assert.equal(s.phase, "debt");
+    assert.equal(s.debt, debt);
+    act(s, "mortgage", { id: 39, player: 0 });
+    assert.equal(s.phase, "end");
+    assert.equal(s.players[2].cash, 1600);
+    assert.equal(s.debt, null);
+    assert.deepEqual(s.queue, []);
+  });
+}
