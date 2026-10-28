@@ -1,1 +1,9 @@
-{"name":"stadtvermoegen","private":true,"type":"module","scripts":{"test":"node --test","start":"python3 -m http.server 8080"}}
+{
+  "name": "stadtvermoegen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8080"
+  }
+}
