@@ -87,7 +87,7 @@ function beep() {
   } catch {}
 }
 function setup() {
-  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">GROSSE PLÄNE. GUTE GESELLSCHAFT.</p><h1>Die Stadt liegt euch zu Füßen.</h1><p>Kleine Straßen, große Chancen. Kauft, handelt und baut euer Vermögen auf — gemeinsam an einem Spielbrett.</p><p class="muted">2–4 Personen · Ein Gerät · Euer nächster Spieleabend</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#925d43">BADSTRASSE<span>${fieldSVG("house")}</span></div><div class="mini-deed" style="--stripe:#57967c">RATHAUSPLATZ<span>${fieldSVG("hotel")}</span></div><div class="mini-deed" style="--stripe:#526ca8">SCHLOSSALLEE<span>${figureSVG("hat")}</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">DER TISCH IST GEDECKT</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted" style="margin:12px 0 0;font-size:10px">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
+  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">STADTVERMÖGEN</p><h1>Ein Spiel für euren Tisch.</h1><p>Kauft Grundstücke, handelt und baut. Spielt zu zweit, zu dritt oder zu viert an einem Gerät.</p><p class="muted">Lokal gespeichert · Ohne Anmeldung</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#925d43">BADSTRASSE<span>${fieldSVG("house")}</span></div><div class="mini-deed" style="--stripe:#57967c">RATHAUSPLATZ<span>${fieldSVG("hotel")}</span></div><div class="mini-deed" style="--stripe:#526ca8">SCHLOSSALLEE<span>${figureSVG("hat")}</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">NEUES SPIEL</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted form-note">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
   let choices = avatars.slice(0, 4).map((a) => a.id);
   const inputs = () => {
     const previous = [...document.querySelectorAll(".name-input")].map(
@@ -181,7 +181,7 @@ function boardHTML() {
     })
     .join(
       "",
-    )}<div class="board-center"><div class="center-content"><p class="eyebrow">DAS GLÜCK ZIEHT SEINE KREISE</p><div class="city-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="center-title">Stadtvermögen</div><p class="eyebrow">KAUFEN · HANDELN · BAUEN</p><div class="center-divider"></div><div class="stock">⌂ ${state.houses} Häuser &nbsp; ▣ ${state.hotels} Hotels in der Bank</div><div class="dice" aria-label="Würfel ${state.dice.join(" und ")}">${state.dice.map(die).join("")}</div><div class="center-turn">${esc(state.players[state.current].name)} ${state.phase === "won" ? "· Spiel beendet" : "ist am Zug"}</div><div class="center-hint">${state.extra ? "Pasch — nach der Feldaktion noch einmal würfeln." : `Runde ${state.round} · Gemeinsam am selben Gerät`}</div><button class="explore-board" data-action="explore">Alle Felder groß ansehen ↗</button></div></div></div></div>`;
+    )}<div class="board-center"><div class="center-content"><div class="center-title">Stadtvermögen</div><div class="stock">⌂ ${state.houses} Häuser &nbsp; ▣ ${state.hotels} Hotels in der Bank</div><div class="dice" aria-label="Würfel ${state.dice.join(" und ")}">${state.dice.map(die).join("")}</div><div class="center-turn">${esc(state.players[state.current].name)} ${state.phase === "won" ? "· Spiel beendet" : "ist am Zug"}</div><div class="center-hint">${state.extra ? "Pasch — nach der Feldaktion noch einmal würfeln." : `Runde ${state.round} · Gemeinsam am selben Gerät`}</div><button class="explore-board" data-action="explore">Alle Felder groß ansehen ↗</button></div></div></div></div>`;
 }
 function die(n) {
   const places = {
@@ -198,12 +198,12 @@ function actionsHTML() {
   const p = state.players[state.current];
   if (state.trade) {
     const t = state.trade;
-    return `<p class="auction-title">ANGEBOT AN ${esc(state.players[t.to].name)}</p>${tradeSummary(t)}<p class="muted">Gib das Gerät an ${esc(state.players[t.to].name)}. Nur diese Person soll die Zustimmung bestätigen.</p><div class="action-buttons">${button("Handel annehmen", "acceptTrade", "primary")}${button("Ablehnen", "rejectTrade")}</div>`;
+    return `<p class="trade-title">ANGEBOT AN ${esc(state.players[t.to].name)}</p>${tradeSummary(t)}<p class="muted">Gib das Gerät an ${esc(state.players[t.to].name)}. Nur diese Person soll die Zustimmung bestätigen.</p><div class="action-buttons">${button("Handel annehmen", "acceptTrade", "primary")}${button("Ablehnen", "rejectTrade")}</div>`;
   }
   if (state.phase === "won")
     return `<div class="won"><p class="eyebrow">DIE STADT HAT EINEN GEWINNER</p><h2>${esc(state.players[state.winner].name)}</h2><p>Das letzte Vermögen am Tisch.<br>Danke für diesen Spielabend!</p>${button("Noch eine Runde", "new", "")}</div>`;
   if (state.phase === "roll")
-    return `<p class="action-message">${p.jail !== null ? `Du sitzt im Gefängnis. Versuch ${p.jail + 1} von 3: Würfle einen Pasch oder wähle vor dem Wurf eine andere Befreiung.` : state.extra ? "Ein Pasch! Du darfst noch einmal würfeln." : "Dein nächster Schritt könnte der Beginn einer großen Investition sein."}</p><div class="action-buttons">${button("Würfeln ↗", "roll", "primary")}${p.jail !== null ? button("50 zahlen", "jailPay", "", p.cash < 50 ? "disabled" : "") + button("Frei-Karte nutzen", "jailCard", "", !p.cards.length ? "disabled" : "") : ""}</div>`;
+    return `<p class="action-message">${p.jail !== null ? `Du sitzt im Gefängnis. Versuch ${p.jail + 1} von 3: Würfle einen Pasch oder wähle vor dem Wurf eine andere Befreiung.` : state.extra ? "Ein Pasch! Du darfst noch einmal würfeln." : "Würfle, um deinen Zug zu beginnen."}</p><div class="action-buttons">${button("Würfeln ↗", "roll", "primary")}${p.jail !== null ? button("50 zahlen", "jailPay", "", p.cash < 50 ? "disabled" : "") + button("Frei-Karte nutzen", "jailCard", "", !p.cards.length ? "disabled" : "") : ""}</div>`;
   if (state.phase === "end")
     return `<p class="action-message">${p.out ? "Du bist ausgeschieden." : "Alles erledigt. Du kannst noch bauen und handeln."} Gib das Gerät danach an die nächste Person.</p><div class="action-buttons">${button("Zug beenden →", "end", "primary")}</div>`;
   if (state.phase === "buy") {
@@ -211,7 +211,7 @@ function actionsHTML() {
     return `<p class="eyebrow">EINE NEUE GELEGENHEIT</p><h3>${esc(board[id].name)}</h3><p class="action-message">Für ${money(board[id].price)} gehört dieses Grundstück ${esc(state.players[player].name)}. Beim Ablehnen bleibt es bei der Bank.</p><div class="action-buttons">${button("Kaufen · " + money(board[id].price), "buy", "primary", state.players[player].cash < board[id].price ? "disabled" : "")}${button("Nicht kaufen", "decline")}</div>${button("Besitzkarte ansehen", "viewPurchase", "quiet")}`;
   }
   if (state.phase === "card")
-    return `<p class="eyebrow">${state.card.deck === "chance" ? "EREIGNIS" : "GEMEINSCHAFT"}</p><div class="card-message">${esc(decks[state.card.deck][state.card.index].text)}</div><div class="action-buttons">${button("Karte ausführen →", "ackCard", "primary")}</div><p class="muted" style="margin:10px 0 0;font-size:11px">Die Karte ist gezogen. Bewegungen und Zahlungen folgen beim Bestätigen.</p>`;
+    return `<p class="eyebrow">${state.card.deck === "chance" ? "EREIGNIS" : "GEMEINSCHAFT"}</p><div class="card-message">${esc(decks[state.card.deck][state.card.index].text)}</div><div class="action-buttons">${button("Karte ausführen →", "ackCard", "primary")}</div><p class="muted form-note">Die Karte ist gezogen. Bewegungen und Zahlungen folgen beim Bestätigen.</p>`;
   if (state.phase === "transfer") {
     const t = state.transfer,
       b = board[t.id];
@@ -232,7 +232,7 @@ function render() {
   if (state.players[selected]?.out) selected = active(state)[0];
   const p = state.players[state.current],
     owner = state.players[selected];
-  app.innerHTML = `<div class="topline"><h1>Euer Spielabend.</h1><span class="save-status"><span class="status-dot"></span>${saveOK ? "Lokal gespeichert" : "Speichern nicht verfügbar"} · Runde ${state.round}</span></div><div class="game-layout"><section aria-label="Spielbrett und Besitz">${boardHTML()}<div class="panel asset-panel"><div class="asset-head"><div><p class="eyebrow">DEIN PORTFOLIO</p><h3>${token(selected)} ${esc(owner.name)}</h3></div><span class="muted">Feld anklicken zum Verwalten</span></div><div class="deed-list">${
+  app.innerHTML = `<div class="topline"><h1>Spielübersicht</h1><span class="save-status"><span class="status-dot"></span>${saveOK ? "Lokal gespeichert" : "Speichern nicht verfügbar"} · Runde ${state.round}</span></div><div class="game-layout"><section aria-label="Spielbrett und Besitz">${boardHTML()}<div class="panel asset-panel"><div class="asset-head"><div><p class="eyebrow">DEIN PORTFOLIO</p><h3>${token(selected)} ${esc(owner.name)}</h3></div><span class="muted">Feld anklicken zum Verwalten</span></div><div class="deed-list">${
     Object.entries(state.estates)
       .filter(([, e]) => e.owner === selected)
       .map(
@@ -240,8 +240,8 @@ function render() {
           `<button class="deed-chip" style="--stripe:${board[id].color || "#7e9380"}" data-square="${id}">${esc(board[id].name)}<small>${e.mortgage ? "Hypothek" : e.level === 5 ? "1 Hotel" : e.level ? e.level + " Häuser" : "Unbebaut"} · ${money(board[id].price)}</small></button>`,
       )
       .join("") ||
-    '<p class="muted">Noch kein Grundbesitz. Jede große Geschichte fängt auf LOS an.</p>'
-  }</div></div></section><aside class="sidebar"><section class="panel turn-panel" aria-label="Aktuelle Aktion" aria-live="polite"><div class="turn-label"><p class="eyebrow">${state.phase === "won" ? "SPIELENDE" : "AM ZUG"}</p><span class="badge">${p.jail !== null ? "Gefängnis" : "Runde " + state.round}</span></div><h2 class="turn-name">${token(state.current)} ${esc(p.name)}</h2><div id="actions">${actionsHTML()}</div></section><section class="panel players-panel"><p class="eyebrow">DIE RUNDE</p>${state.players.map((q, i) => `<button class="player-row ${i === state.current ? "current" : ""} ${i === selected ? "chosen" : ""} ${q.out ? "out" : ""}" data-player="${i}" ${q.out ? "disabled" : ""}>${token(i)}<span>${esc(q.name)}<small>${q.out ? "Ausgeschieden" : `${Object.values(state.estates).filter((e) => e.owner === i).length} Grundstücke · ${q.cards.length} Frei-Karten${q.jail !== null ? " · Gefängnis" : ""}`}</small></span><span class="money">${money(q.cash)}</span></button>`).join("")}<div class="tools">${button("⇄ Handeln", "openTrade", "small", !["roll", "end", "debt"].includes(state.phase) || state.trade ? "disabled" : "")}</div></section><section class="panel log-panel"><p class="eyebrow">DAS SPIELGESCHICHTEBUCH</p><ol class="log" start="${Math.max(1, state.log.length - 29)}">${state.log
+    '<p class="muted">Noch keine Grundstücke im Besitz.</p>'
+  }</div></div></section><aside class="sidebar"><section class="panel turn-panel" aria-label="Aktuelle Aktion" aria-live="polite"><div class="turn-label"><p class="eyebrow">${state.phase === "won" ? "SPIELENDE" : "AM ZUG"}</p><span class="badge">${p.jail !== null ? "Gefängnis" : "Runde " + state.round}</span></div><h2 class="turn-name">${token(state.current)} ${esc(p.name)}</h2><div id="actions">${actionsHTML()}</div></section><section class="panel players-panel"><p class="eyebrow">DIE RUNDE</p>${state.players.map((q, i) => `<button class="player-row ${i === state.current ? "current" : ""} ${i === selected ? "chosen" : ""} ${q.out ? "out" : ""}" data-player="${i}" ${q.out ? "disabled" : ""}>${token(i)}<span>${esc(q.name)}<small>${q.out ? "Ausgeschieden" : `${Object.values(state.estates).filter((e) => e.owner === i).length} Grundstücke · ${q.cards.length} Frei-Karten${q.jail !== null ? " · Gefängnis" : ""}`}</small></span><span class="money">${money(q.cash)}</span></button>`).join("")}<div class="tools">${button("⇄ Handeln", "openTrade", "small", !["roll", "end", "debt"].includes(state.phase) || state.trade ? "disabled" : "")}</div></section><section class="panel log-panel"><p class="eyebrow">VERLAUF</p><ol class="log" start="${Math.max(1, state.log.length - 29)}">${state.log
     .slice(-30)
     .map((l) => `<li>${esc(l.replace(/^Auktion:/, "Frühere Vergabe:"))}</li>`)
     .join(
@@ -335,7 +335,7 @@ function openTrade() {
   const first = ids.includes(selected) ? selected : ids[0],
     second = ids.find((i) => i !== first);
   open(
-    `<p class="eyebrow">GEMEINSAM VERHANDELN</p><h2>Ein guter Tausch?</h2><p class="muted">Wählt Grundstücke, Bargeld und Frei-Karten. Das Angebot wird erst nach ausdrücklicher Zustimmung der anderen Person ausgeführt.</p><form id="tradeForm"><div class="trade-grid">${[first, second].map((p, j) => `<div class="trade-side"><label for="tradePlayer${j}">${j ? "Andere Person" : "Angebot von"}</label><select id="tradePlayer${j}">${ids.map((i) => `<option value="${i}" ${i === p ? "selected" : ""}>${esc(state.players[i].name)}</option>`).join("")}</select><div id="tradeAssets${j}"></div></div>`).join("")}</div><button class="primary" style="margin-top:18px" type="submit">Angebot zur Zustimmung vorlegen</button></form>`,
+    `<p class="eyebrow">GEMEINSAM VERHANDELN</p><h2>Handel vereinbaren</h2><p class="muted">Wählt Grundstücke, Bargeld und Frei-Karten. Das Angebot wird erst nach ausdrücklicher Zustimmung der anderen Person ausgeführt.</p><form id="tradeForm"><div class="trade-grid">${[first, second].map((p, j) => `<div class="trade-side"><label for="tradePlayer${j}">${j ? "Andere Person" : "Angebot von"}</label><select id="tradePlayer${j}">${ids.map((i) => `<option value="${i}" ${i === p ? "selected" : ""}>${esc(state.players[i].name)}</option>`).join("")}</select><div id="tradeAssets${j}"></div></div>`).join("")}</div><button class="primary form-submit" type="submit">Angebot zur Zustimmung vorlegen</button></form>`,
   );
   function assets(j) {
     const p = Number($("#tradePlayer" + j).value);
@@ -562,7 +562,7 @@ render();
 
 function exploreBoard() {
   open(
-    `<p class="eyebrow">DAS BRETT IM DETAIL</p><h2>40 Felder. Eure Stadt.</h2><div class="field-list">${board
+    `<p class="eyebrow">DAS BRETT IM DETAIL</p><h2>Alle 40 Felder</h2><div class="field-list">${board
       .map((b) => {
         const e = state.estates[b.id];
         return `<button data-field="${b.id}" style="--stripe:${b.color || "#9baa8d"}"><span class="field-number">${icons[b.type] || fieldSVG("house")}</span><span>${esc(b.name)}<small>${e?.owner !== null && e ? esc(state.players[e.owner].name) + (e.mortgage ? " · Hypothek" : "") : e ? "Bank" : b.type === "tax" ? "Steuer" : ""}</small></span><strong>${b.price ? money(b.price) : icons[b.type] || ""}</strong></button>`;
