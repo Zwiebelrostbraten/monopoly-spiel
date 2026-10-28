@@ -416,6 +416,9 @@ try {
   const duringShake = await saved();
   const rawDuringShake = await page.evaluate(()=>localStorage.getItem('stadtvermoegen-v1'));
   await page.evaluate(()=>{window.rollingDie=document.querySelector('.die');});
+  await page.setViewportSize({width:1280,height:620});
+  await page.setViewportSize({width:844,height:390});
+  await page.setViewportSize({width:1366,height:650});
   await page.locator('#themeButton').click();
   assert.ok(await page.evaluate(()=>window.rollingDie===document.querySelector('.die')), 'theme preserves animation nodes');
   assert.equal(await page.evaluate(()=>localStorage.getItem('stadtvermoegen-v1')),rawDuringShake);

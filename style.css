@@ -531,6 +531,7 @@ footer {
 }
 
 .card-message,.trade-summary {
+  overflow-wrap: anywhere;
   padding: var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
@@ -1384,3 +1385,84 @@ input::placeholder { color: var(--muted); opacity: 1; }
 .mini-deed { font-size: .625rem; overflow-wrap: anywhere; }
 .center-title { color: var(--ink); background: var(--card); border: 2px solid var(--ink); border-left: 8px solid #bd2335; outline: none; box-shadow: 4px 4px 0 #bd2335; transform: none; }
 dialog { padding-top: calc(44px + 2rem); }
+
+/* Gameplay fit mode uses both viewport axes. rem thresholds deliberately opt
+   enlarged text out; setup and small windows retain the normal reading flow. */
+@media (min-width: 80rem) and (min-height: 38rem) {
+  body:has(.game-layout) {
+    --gutter: 16px;
+    --panel-space: 12px;
+  }
+  body:has(.game-layout) :is(.masthead,main,footer) { max-width: none; }
+  body:has(.game-layout) .masthead { padding-block: 8px; }
+  body:has(.game-layout) main { padding-block: 8px 12px; }
+  body:has(.game-layout) footer { padding-block: 8px; }
+  .topline { margin-bottom: 8px; min-height: 32px; }
+  main:has(.game-layout) { container-type: inline-size; }
+  @container (min-width: 78rem) {
+  .game-layout {
+    --workspace-height: calc(100dvh - 164px);
+    grid-template-columns: minmax(0,min(var(--workspace-height),calc(100% - 760px))) minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas: 'board turn players' 'board assets log';
+    grid-template-rows: minmax(19.5rem,1.5fr) minmax(0,1fr);
+    height: var(--workspace-height);
+    align-items: stretch;
+    gap: 12px;
+  }
+  .board-wrap { align-self: start; width: 100%; padding: 8px; }
+  .game-layout > .panel { min-height: 0; }
+  .turn-panel { overflow: auto; }
+  .turn-name { font-size: 1.25rem; margin-bottom: 4px; }
+  .turn-name .token { width: 32px; height: 32px; }
+  .turn-label { margin-bottom: 8px; }
+  .action-message { margin-bottom: 8px; line-height: 1.4; }
+  .action-buttons { flex-direction: row; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--card); padding-block: 4px; z-index: 1; }
+  .action-buttons button { padding-block: 8px; flex: 1 1 120px; }
+  .turn-panel h3,.turn-panel #actions > .eyebrow { margin-bottom: 4px; }
+  .card-message,.trade-summary { padding: 8px; margin-bottom: 8px; }
+  .form-note { margin-top: 8px; }
+  .players-panel > .eyebrow { margin-bottom: 4px; }
+  .player-row { padding: 4px; margin-top: 4px; gap: 8px; font-size: .8125rem; }
+  .player-row small { margin-top: 0; font-size: .6875rem; }
+  .tools { margin-top: 8px; }
+  .game-layout > :is(.asset-panel,.log-panel) { display: flex; flex-direction: column; }
+  .asset-head { margin-bottom: 8px; gap: 4px; flex-shrink: 0; flex-wrap: nowrap; }
+  .asset-head .token { width: 20px; height: 20px; }
+  .asset-head .eyebrow { margin-bottom: 0; font-size: .6875rem; }
+  .asset-head > .muted { font-size: .6875rem; max-width: 100px; }
+  .asset-head h3 { font-size: .875rem; }
+  .deed-list,.log { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+  .deed-list { flex: 1; align-content: start; padding: 0 4px 4px 0; }
+  .deed-chip { flex-basis: 130px; font-size: .75rem; padding: 4px; border-top-width: 6px; }
+  .deed-chip small { display: inline; margin: 0 0 0 4px; font-size: .6875rem; }
+  .log { max-height: none; }
+  }
+  @container (max-width: 77.999rem) {
+    .game-layout {
+      grid-template-columns: minmax(0,1fr);
+      grid-template-areas: 'board' 'turn' 'players' 'assets' 'log';
+      grid-template-rows: auto;
+    }
+  }
+}
+
+/* Board miniatures depend on their actual container, including short laptops.
+   Track minima and figures shrink together; full-size figures remain in panels. */
+.board-wrap { container-type: inline-size; }
+@container (max-width: 600px) {
+  .board { --occupied-track: 30px; gap: 1px; }
+  .square { padding: 8px 1px 1px; font-size: 7px; gap: 1px; }
+  .square.corner { font-size: 7px; padding: 8px 1px 1px; }
+  .square.occupied { padding: 0; justify-content: center; }
+  .square.occupied .sq-name,.square.occupied .buildings { display: none; }
+  .square .tokens { grid-template-columns: repeat(2,13px); gap: 1px; }
+  .square .token { width: 13px; height: 13px; border-width: 1.5px; }
+  .square .sq-icon .field-svg { width: 14px; height: 14px; }
+  .board-center { padding: 8px; }
+  .center-title { font-size: 1.1rem; margin-bottom: 8px; padding: 4px 6px; }
+  .dice { margin-block: 8px; gap: 8px; }
+  .die { width: 36px; height: 36px; padding: 7px; gap: 2px; }
+  .center-turn { margin-block: 8px; font-size: .8125rem; }
+  .stock,.center-hint { font-size: .75rem; }
+  .explore-board { margin-top: 8px; padding: 8px; }
+}

@@ -40,6 +40,7 @@ try {
    const choices=await modal.locator('input,select').evaluateAll(es=>es.map(e=>[e.id,e.value,e.checked]));
    const snapshot=await modal.evaluate(e=>{const input=e.querySelector('input,select');input?.focus();window.themeFocus=document.activeElement;return e.querySelector('#detailContent')?.innerHTML || e.querySelector('h2').textContent;});
    for(let i=0;i<2;i++) {
+    await page.setViewportSize(i ? {width:1366,height:650} : {width:844,height:390});
     // A keyboard shortcut uses the same presentation-only action without moving form focus.
     await page.keyboard.press('Alt+Shift+D');
     assert.equal(await modal.evaluate(e=>e.querySelector('#detailContent')?.innerHTML || e.querySelector('h2').textContent),snapshot,'dialog nodes and choices preserved');

@@ -51,7 +51,14 @@ export async function checkGeometry(page, surface) {
     const panels=[...document.querySelectorAll('.game-layout > .panel')];
     for(const panel of panels) {
       const r=panel.getBoundingClientRect();
-      for(const control of panel.querySelectorAll('button')) {const c=control.getBoundingClientRect();if(c.left<r.left || c.right>r.right || c.top<r.top || c.bottom>r.bottom)errors.push('control outside panel');}
+      for(const control of panel.querySelectorAll('button')) {
+        const c=control.getBoundingClientRect();
+        const scroller=control.closest('.deed-list');
+        if(scroller && getComputedStyle(scroller).overflowY==='auto') {
+          const s=scroller.getBoundingClientRect();
+          if(c.left<s.left || c.right>s.right || c.height>scroller.clientHeight+1) errors.push('portfolio control cannot fit scroll viewport');
+        } else if(c.left<r.left || c.right>r.right || c.top<r.top || c.bottom>r.bottom) errors.push('control outside panel');
+      }
     }
     if(panels.length && panels.map(p=>p.className).join('|')!=='panel turn-panel|panel players-panel|panel asset-panel|panel log-panel')errors.push('reading order mismatch');
     const stripes=[...document.querySelectorAll('.square .stripe')].map(e=>getComputedStyle(e).backgroundColor);
