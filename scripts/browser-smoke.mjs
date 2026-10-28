@@ -57,12 +57,116 @@ try {
     await page
       .getByLabel("Name Person " + i)
       .fill(["Anna", "Ben", "Cleo", "David"][i - 1]);
+  // Selecting an occupied figure swaps it without losing names or focus.
+  await page
+    .getByRole("button", { name: "Auto, Person 1", exact: true })
+    .click();
+  assert.equal(
+    await page
+      .locator('[data-person="0"][data-figure="car"]')
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(
+    await page
+      .locator('[data-person="1"][data-figure="dog"]')
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(await page.getByLabel("Name Person 1").inputValue(), "Anna");
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    assert.ok(
+      await page.locator(".figure-choice").evaluateAll((buttons) =>
+        buttons.every((b) => {
+          const r = b.getBoundingClientRect();
+          return r.width >= 44 && r.height >= 44 && b.querySelector("svg");
+        }),
+      ),
+    );
+  }
   await page.getByRole("button", { name: /Spielabend beginnen/ }).click();
+  assert.deepEqual(
+    (await saved()).players.map((p) => p.avatar),
+    ["car", "dog", "hat", "ship"],
+  );
   assert.equal((await saved()).players.length, 4);
   assert.equal(await page.locator(".square").count(), 40);
   await page.getByRole("button", { name: "Spielregeln", exact: true }).click();
   assert.equal(await page.locator("#rules").evaluate((e) => e.open), true);
   await page.keyboard.press("Escape");
+  // Legacy saves must remain byte-for-byte intact on load; rendering is display-only.
+  for (const position of [0, 1]) {
+    await fixture({
+      count: 4,
+      players: Object.fromEntries(
+        [0, 1, 2, 3].map((i) => [i, { pos: position }]),
+      ),
+    });
+    const beforeLegacy = await page.evaluate(() =>
+      localStorage.getItem("stadtvermoegen-v1"),
+    );
+    await page.reload();
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("stadtvermoegen-v1")),
+      beforeLegacy,
+    );
+    for (const width of [1440, 1000, 820, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const figures = page.locator(`.square[data-square="${position}"] .token`);
+      assert.equal(await figures.count(), 4);
+      assert.deepEqual(
+        await figures
+          .locator("svg")
+          .evaluateAll((es) => es.map((e) => e.dataset.avatar)),
+        ["dog", "car", "hat", "ship"],
+      );
+      assert.ok(
+        await figures.evaluateAll((es) => {
+          const rs = es.map((e) => e.getBoundingClientRect());
+          return (
+            new Set(es.map((e) => getComputedStyle(e).borderColor)).size ===
+              4 &&
+            rs.every(
+              (r, i) =>
+                r.width >= 12 &&
+                r.height >= 12 &&
+                rs.every(
+                  (q, j) =>
+                    i === j ||
+                    r.right <= q.left ||
+                    q.right <= r.left ||
+                    r.bottom <= q.top ||
+                    q.bottom <= r.top,
+                ),
+            )
+          );
+        }),
+      );
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+        false,
+      );
+      if (
+        process.env.SCREENSHOT_DIR &&
+        position === 1 &&
+        [1440, 320].includes(width)
+      )
+        await page.screenshot({
+          path: `${process.env.SCREENSHOT_DIR}/figures-crowded-${width}.png`,
+          fullPage: true,
+        });
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
   // Real keyboard roll, purchase, explicit handover and rent.
   await fixture();
   await page.locator('[data-action="roll"]').focus();
@@ -134,7 +238,13 @@ try {
   // Fundraising during an accepted mortgage trade must preserve the transfer choice.
   for (const decision of ["transferKeep", "transferRedeem"]) {
     for (const recipientCash of [1500, 0]) {
-      const debt = { type: "pay", from: 0, to: 2, amount: 100, reason: "Miete" };
+      const debt = {
+        type: "pay",
+        from: 0,
+        to: 2,
+        amount: 100,
+        reason: "Miete",
+      };
       await fixture({
         state: { phase: "debt", debt, queue: [debt, { type: "finish" }] },
         players: { 0: { cash: 0 }, 1: { cash: recipientCash } },
@@ -174,8 +284,10 @@ try {
       assert.equal(s.transfer, null);
       assert.equal(s.debt, null);
       assert.equal(s.players[0].cash, 100);
-      assert.equal(s.players[1].cash,
-        (recipientCash || 175) - (decision === "transferKeep" ? 3 : 33));
+      assert.equal(
+        s.players[1].cash,
+        (recipientCash || 175) - (decision === "transferKeep" ? 3 : 33),
+      );
       assert.equal(s.players[2].cash, 1600);
       assert.equal(s.estates[1].mortgage, decision === "transferKeep");
       assert.deepEqual(s.queue, []);
@@ -301,7 +413,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest and debt precedence (4 variants with reload), jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
+    "PASS: pictorial setup and swaps, 44px targets, unchanged legacy saves, four crowded figures at 5 widths, setup 4 players, keyboard dice, buy/rent, auction, buildings, mortgage, consent trade/cards, transfer interest and debt precedence (4 variants with reload), jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
   );
 } finally {
   await browser.close();

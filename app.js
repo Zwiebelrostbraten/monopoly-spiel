@@ -1,3 +1,4 @@
+import { avatars, resolveAvatar, figureSVG, fieldSVG } from "./visuals.js";
 import { createGame, act, board, active, chooseStarter } from "./engine.js";
 import { decks } from "./data.js";
 const $ = (s) => document.querySelector(s),
@@ -5,8 +6,7 @@ const $ = (s) => document.querySelector(s),
   detail = $("#detail"),
   content = $("#detailContent");
 const KEY = "stadtvermoegen-v1",
-  palette = ["#a8563f", "#436f9b", "#9a6b9e", "#537f59"],
-  avatars = ["◆", "●", "▲", "★", "♟", "✿", "☀", "⬟"];
+  palette = ["#a8563f", "#436f9b", "#9a6b9e", "#537f59"];
 const esc = (x) =>
   String(x).replace(
     /[&<>"']/g,
@@ -64,7 +64,7 @@ function button(text, action, klass = "", attrs = "") {
   return `<button class="${klass}" data-action="${action}" ${attrs}>${text}</button>`;
 }
 function token(i) {
-  return `<span class="token" style="--player:${palette[i]}" title="${esc(state.players[i].name)}">${esc(state.players[i].avatar)}</span>`;
+  return `<span class="token" style="--player:${palette[i]}" role="img" aria-label="${esc(state.players[i].name)} · ${resolveAvatar(state.players[i].avatar).name}" title="${esc(state.players[i].name)} · ${resolveAvatar(state.players[i].avatar).name}">${figureSVG(state.players[i].avatar)}</span>`;
 }
 function beep() {
   if (!sound) return;
@@ -84,7 +84,8 @@ function beep() {
   } catch {}
 }
 function setup() {
-  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">GROSSE PLÄNE. GUTE GESELLSCHAFT.</p><h1>Die Stadt liegt euch zu Füßen.</h1><p>Kleine Straßen, große Chancen. Kauft, handelt und baut euer Vermögen auf — gemeinsam an einem Spielbrett.</p><p class="muted">2–4 Personen · Ein Gerät · Euer nächster Spieleabend</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#925d43">BADSTRASSE<span>▥</span></div><div class="mini-deed" style="--stripe:#57967c">RATHAUSPLATZ<span>♜</span></div><div class="mini-deed" style="--stripe:#526ca8">SCHLOSSALLEE<span>♛</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">DER TISCH IST GEDECKT</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted" style="margin:12px 0 0;font-size:10px">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
+  app.innerHTML = `<section class="setup"><div class="setup-intro"><p class="eyebrow">GROSSE PLÄNE. GUTE GESELLSCHAFT.</p><h1>Die Stadt liegt euch zu Füßen.</h1><p>Kleine Straßen, große Chancen. Kauft, handelt und baut euer Vermögen auf — gemeinsam an einem Spielbrett.</p><p class="muted">2–4 Personen · Ein Gerät · Euer nächster Spieleabend</p><div class="setup-art" aria-hidden="true"><div class="mini-deed" style="--stripe:#925d43">BADSTRASSE<span>${fieldSVG("house")}</span></div><div class="mini-deed" style="--stripe:#57967c">RATHAUSPLATZ<span>${fieldSVG("hotel")}</span></div><div class="mini-deed" style="--stripe:#526ca8">SCHLOSSALLEE<span>${figureSVG("hat")}</span></div></div></div><form id="setupForm" class="setup-card"><p class="eyebrow">DER TISCH IST GEDECKT</p><h2>Wer spielt mit?</h2><label for="playerCount">Personen am Spielbrett</label><select id="playerCount"><option value="2">2 Personen</option><option value="3">3 Personen</option><option value="4">4 Personen</option></select><div id="playerInputs"></div><p class="muted">Wählt eure Namen und Figuren. Der höchste Startwurf beginnt; danach geht es der Reihe nach weiter.</p><button class="primary" type="submit">Spielabend beginnen <span aria-hidden="true">↗</span></button><p class="muted" style="margin:12px 0 0;font-size:10px">1.500 Startgeld · Klassisches deutsches Brett · Kein Konto nötig</p></form></section>`;
+  let choices = avatars.slice(0, 4).map((a) => a.id);
   const inputs = () => {
     const previous = [...document.querySelectorAll(".name-input")].map(
       (e) => e.value,
@@ -92,19 +93,48 @@ function setup() {
     $("#playerInputs").innerHTML = Array.from(
       { length: Number($("#playerCount").value) },
       (_, i) =>
-        `<div class="player-input"><select class="avatar-input" aria-label="Figur Person ${i + 1}">${avatars.map((a, j) => `<option ${j === i ? "selected" : ""}>${a}</option>`).join("")}</select><input class="name-input" aria-label="Name Person ${i + 1}" placeholder="Person ${i + 1}" maxlength="20" value="${esc(previous[i] || "")}" autocomplete="off"></div>`,
+        `<div class="player-input" style="--player:${palette[i]}"><input class="name-input" aria-label="Name Person ${i + 1}" placeholder="Person ${i + 1}" maxlength="20" value="${esc(previous[i] || "")}" autocomplete="off"><fieldset class="figure-picker"><legend>Figur Person ${i + 1} · <span class="figure-name">${resolveAvatar(choices[i]).name}</span></legend><div class="figure-options">${avatars.map((a) => `<button type="button" class="figure-choice" data-person="${i}" data-figure="${a.id}" aria-label="${a.name}, Person ${i + 1}" aria-pressed="${choices[i] === a.id}">${figureSVG(a.id)}<span>${a.name}</span></button>`).join("")}</div></fieldset></div>`,
     ).join("");
+    $("#playerInputs")
+      .querySelectorAll("[data-figure]")
+      .forEach(
+        (el) =>
+          (el.onclick = () => {
+            const i = Number(el.dataset.person),
+              id = el.dataset.figure,
+              other = choices.indexOf(id);
+            if (other !== -1 && other !== i) choices[other] = choices[i];
+            choices[i] = id;
+            // Update in place to preserve keyboard focus and entered names.
+            document
+              .querySelectorAll("[data-figure]")
+              .forEach((b) =>
+                b.setAttribute(
+                  "aria-pressed",
+                  String(
+                    choices[Number(b.dataset.person)] === b.dataset.figure,
+                  ),
+                ),
+              );
+            document
+              .querySelectorAll(".figure-name")
+              .forEach(
+                (n, j) => (n.textContent = resolveAvatar(choices[j]).name),
+              );
+            if (other !== -1 && other !== i)
+              toast("Figuren getauscht. Jede Person hat ihre eigene Figur.");
+          }),
+      );
   };
   $("#playerCount").onchange = inputs;
   inputs();
   $("#setupForm").onsubmit = (e) => {
     e.preventDefault();
-    const names = [...document.querySelectorAll(".name-input")],
-      figures = [...document.querySelectorAll(".avatar-input")];
+    const names = [...document.querySelectorAll(".name-input")];
     state = createGame(
       names.map((n, i) => ({
         name: n.value.trim() || `Person ${i + 1}`,
-        avatar: figures[i].value,
+        avatar: choices[i],
       })),
     );
     chooseStarter(state);
@@ -113,17 +143,19 @@ function setup() {
     render();
   };
 }
-const icons = {
-  go: "↗",
-  community: "✉",
-  chance: "?",
-  tax: "◈",
-  rail: "▰",
-  utility: "⌁",
-  jail: "▦",
-  parking: "☕",
-  gojail: "↘",
-};
+const icons = Object.fromEntries(
+  [
+    "go",
+    "community",
+    "chance",
+    "tax",
+    "rail",
+    "utility",
+    "jail",
+    "parking",
+    "gojail",
+  ].map((k) => [k, fieldSVG(k)]),
+);
 function coords(i) {
   if (i <= 10) return [11, 11 - i];
   if (i <= 20) return [21 - i, 1];
@@ -142,7 +174,7 @@ function boardHTML() {
               : null,
           )
           .filter((i) => i !== null);
-      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""}" style="grid-row:${r};grid-column:${c};--stripe:${b.color || "#7e9380"};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || "▥"}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? "▣" : "⌂".repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "+200" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
+      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""}" style="grid-row:${r};grid-column:${c};--stripe:${b.color || "#7e9380"};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || fieldSVG("house")}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? fieldSVG("hotel") : fieldSVG("house").repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "+200" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
     })
     .join(
       "",
@@ -256,7 +288,7 @@ function showDeed(id) {
     e = state.estates[id];
   if (!e) {
     open(
-      `<p class="eyebrow">FELD ${id}</p><h2>${esc(b.name)}</h2><p>${{ go: "Beim Vorwärts-Überqueren oder Erreichen zahlt die Bank 200.", chance: "Ziehe eine Ereigniskarte und führe ihre Wirkung aus.", community: "Ziehe eine Gemeinschaftskarte und führe ihre Wirkung aus.", jail: "Hier bist du nur zu Besuch, wenn du regulär landest. Gefängnisstrafen dauern höchstens drei Würfelversuche.", gojail: "Direkt ins Gefängnis, ohne LOS-Gehalt. Dein Zug endet.", parking: "Eine ruhige Pause. Kein Geld und keine weitere Aktion.", tax: "Zahle " + money(b.price) + " an die Bank." }[b.type]}</p>`,
+      `<p class="eyebrow">FELD ${id}</p><h2>${icons[b.type] || ""} ${esc(b.name)}</h2><p>${{ go: "Beim Vorwärts-Überqueren oder Erreichen zahlt die Bank 200.", chance: "Ziehe eine Ereigniskarte und führe ihre Wirkung aus.", community: "Ziehe eine Gemeinschaftskarte und führe ihre Wirkung aus.", jail: "Hier bist du nur zu Besuch, wenn du regulär landest. Gefängnisstrafen dauern höchstens drei Würfelversuche.", gojail: "Direkt ins Gefängnis, ohne LOS-Gehalt. Dein Zug endet.", parking: "Eine ruhige Pause. Kein Geld und keine weitere Aktion.", tax: "Zahle " + money(b.price) + " an die Bank." }[b.type]}</p>`,
     );
     return;
   }
@@ -285,7 +317,7 @@ function showDeed(id) {
   if (b.type === "street")
     rows.splice(1, 0, ["Vollständige Farbgruppe", b.rents[0] * 2]);
   open(
-    `<div class="deed-color" style="--stripe:${b.color || "#7e9380"}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil((b.price * 11) / 20))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
+    `<div class="deed-color" style="--stripe:${b.color || "#7e9380"}"></div><p class="eyebrow">BESITZKARTE · ${b.type === "street" ? "STRASSE" : b.type === "rail" ? "BAHNHOF" : "VERSORGUNGSWERK"}</p><h2>${esc(b.name)}</h2><p class="muted">${owner ? "Im Besitz von " + token(e.owner) + " " + esc(owner.name) : "Im Besitz der Bank"}${e.mortgage ? " · Mit Hypothek belastet" : ""}${e.level ? " · " + (e.level === 5 ? "1 Hotel" : e.level + " Häuser") : ""}</p><button class="quiet" data-action="explore">← Alle Felder</button><table class="rent-table"><tbody><tr><td>Kaufpreis</td><td>${money(b.price)}</td></tr>${rows.map(([label, value]) => `<tr><td>${label}</td><td>${typeof value === "number" ? money(value) : value}</td></tr>`).join("")}${b.build ? `<tr><td>Je Haus / Hotel (+ 4 Häuser)</td><td>${money(b.build)}</td></tr>` : ""}<tr><td>Hypothekenwert</td><td>${money(b.price / 2)}</td></tr><tr><td>Ablösen inklusive Zinsen</td><td>${money(Math.ceil((b.price * 11) / 20))}</td></tr></tbody></table>${owner && !owner.out && state.phase !== "won" ? `<p class="muted">Verwaltung durch ${esc(owner.name)} · Verfügbar ${money(owner.cash)}. Ungültige Aktionen werden mit Begründung abgewiesen.</p><div class="detail-actions">${b.type === "street" ? `<button data-manage="build">⌂ Bauen</button><button data-manage="sell">Gebäude verkaufen</button><button data-manage="sellGroup">Gruppenbebauung verkaufen</button>` : ""}<button data-manage="${e.mortgage ? "unmortgage" : "mortgage"}">${e.mortgage ? "Hypothek ablösen" : "Hypothek aufnehmen"}</button></div>` : ""}`,
   );
   content.querySelectorAll("[data-manage]").forEach(
     (el) =>
@@ -573,7 +605,7 @@ function exploreBoard() {
     `<p class="eyebrow">DAS BRETT IM DETAIL</p><h2>40 Felder. Eure Stadt.</h2><div class="field-list">${board
       .map((b) => {
         const e = state.estates[b.id];
-        return `<button data-field="${b.id}" style="--stripe:${b.color || "#9baa8d"}"><span class="field-number">${b.id}</span><span>${esc(b.name)}<small>${e?.owner !== null && e ? esc(state.players[e.owner].name) + (e.mortgage ? " · Hypothek" : "") : e ? "Bank" : b.type === "tax" ? "Steuer" : ""}</small></span><strong>${b.price ? money(b.price) : icons[b.type] || ""}</strong></button>`;
+        return `<button data-field="${b.id}" style="--stripe:${b.color || "#9baa8d"}"><span class="field-number">${icons[b.type] || fieldSVG("house")}</span><span>${esc(b.name)}<small>${e?.owner !== null && e ? esc(state.players[e.owner].name) + (e.mortgage ? " · Hypothek" : "") : e ? "Bank" : b.type === "tax" ? "Steuer" : ""}</small></span><strong>${b.price ? money(b.price) : icons[b.type] || ""}</strong></button>`;
       })
       .join("")}</div>`,
   );

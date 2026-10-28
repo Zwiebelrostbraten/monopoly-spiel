@@ -16,7 +16,7 @@ python3 -m http.server 8080
 
 Alternativ: `npm start` (startet denselben Python-Server). Ein direktes Öffnen über `file://` unterstützt die verwendeten ES-Module nicht zuverlässig. Zum Spielen ist kein `npm install` erforderlich.
 
-Choose 2–4 names and avatars. Automatic starting rolls determine who goes first, rerolling tied leaders. Roll, resolve the square and explicitly end the turn before passing the device. There are no computer opponents or network sessions. Every square opens its deed or explanation. On phones, **“Alle Felder groß ansehen”** opens a readable, keyboard-accessible list of all 40 squares. Click a player to inspect their portfolio; click an owned property to build, sell or manage its mortgage.
+Choose 2–4 names and illustrated figures. Eight original metallic SVG objects have visible, labelled selection buttons; choosing an occupied figure swaps the two selections. Player color rings distinguish figures on shared squares. Legacy symbol avatars resolve only when displayed, preserving existing saves. Automatic starting rolls determine who goes first, rerolling tied leaders. Roll, resolve the square and explicitly end the turn before passing the device. There are no computer opponents or network sessions. Every square opens its deed or explanation. On phones, **“Alle Felder groß ansehen”** opens a readable, keyboard-accessible list of all 40 squares. Click a player to inspect their portfolio; click an owned property to build, sell or manage its mortgage.
 
 ## Speichern / Saves
 
@@ -65,21 +65,21 @@ node --check app.js
 node --check engine.js
 ```
 
-`engine.js` contains the serializable rule model and action queue; `data.js` contains board/deck facts; `app.js` binds the model to the UI. `act(state, 'roll', {dice: [1, 2]})` provides deterministic dice, and a fourth RNG argument controls utility rolls and other random actions. `createGame` accepts an RNG for deck shuffling. The UI uses copy-then-commit actions so a rejected command never partially changes the saved state.
+`engine.js` contains the serializable rule model and action queue; `data.js` contains board/deck facts; `app.js` binds the model to the UI; `visuals.js` contains original SVG geometry and legacy avatar resolution. `act(state, 'roll', {dice: [1, 2]})` provides deterministic dice, and a fourth RNG argument controls utility rolls and other random actions. `createGame` accepts an RNG for deck shuffling. The UI uses copy-then-commit actions so a rejected command never partially changes the saved state.
 
-The suite covers 37 focused model cases, one static entry check and a simulation test executing **24 seeded complete 2–4-player games**. The simulation's test-only policy includes consenting consolidation trades to encourage completion; it is not shipped as an AI opponent. It checks cash, deed ownership, 32/12 stock, card conservation, save/restore and a terminal winner after each action.
+The suite covers 43 focused model cases, three visual regression cases, one static entry check and a simulation test executing **24 seeded complete 2–4-player games**. The simulation's test-only policy includes consenting consolidation trades to encourage completion; it is not shipped as an AI opponent. It checks cash, deed ownership, 32/12 stock, card conservation, save/restore and a terminal winner after each action.
 
 Optional real-browser verification uses Playwright installed **outside** the repository:
 
 ```sh
-npm install --prefix /tmp/stadt-browser playwright
-/tmp/stadt-browser/node_modules/.bin/playwright install chromium
+npm install --prefix "$HOME/.cache/stadt-browser" playwright
+"$HOME/.cache/stadt-browser"/node_modules/.bin/playwright install chromium
 # Keep python3 -m http.server 8080 running in another terminal.
-PLAYWRIGHT_MODULE=/tmp/stadt-browser/node_modules/playwright/index.mjs \
+PLAYWRIGHT_MODULE="$HOME/.cache/stadt-browser/node_modules/playwright/index.mjs" \
   node scripts/browser-smoke.mjs
 ```
 
-Set `CHROMIUM_PATH` to an existing browser executable when appropriate, `GAME_URL` for a different server, and `SCREENSHOT_DIR` for optional desktop/mobile captures. This checks actual keyboard/click flows, purchases and rents, four-player auctions, construction, mortgages, consent trades including cards, mortgage transfer choices, jail debt, card movement, bankruptcy/win, reload persistence and 1440/390/320 layouts, and fails on console/page/HTTP errors.
+Set `CHROMIUM_PATH` to an existing browser executable when appropriate, `GAME_URL` for a different server, and `SCREENSHOT_DIR` for optional desktop/mobile captures. This checks figure selection/swaps, 44px selection targets, unchanged legacy saves, four separate color-ringed figures on corner/street squares at 1440/1000/820/390/320 widths, actual keyboard/click flows, purchases and rents, four-player auctions, construction, mortgages, consent trades including cards, mortgage transfer choices, jail debt, card movement, bankruptcy/win, reload persistence and 1440/390/320 layouts, and fails on console/page/HTTP errors.
 
 ## GitHub Pages
 

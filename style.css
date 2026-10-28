@@ -1306,3 +1306,153 @@ dialog p {
     font-size: 6px;
   }
 }
+/* Original sculptural tokens share one rendering in every game surface. */
+.figure-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.field-svg {
+  width: 1.8em;
+  height: 1.8em;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.token {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 2px;
+  border: 2px solid var(--player);
+  background: radial-gradient(circle at 35% 20%, #fffdf3, #d9ddcf);
+  box-shadow:
+    0 2px 3px #20342c44,
+    inset 0 0 0 1px #fff;
+  flex-shrink: 0;
+}
+.player-row {
+  grid-template-columns: 34px 1fr auto;
+}
+.player-row .token {
+  width: 32px;
+  height: 32px;
+}
+.turn-name .token {
+  width: 44px;
+  height: 44px;
+}
+.player-input {
+  display: block;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 18px;
+}
+.name-input {
+  width: 100%;
+  min-height: 44px;
+}
+.figure-picker {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 0;
+  min-width: 0;
+}
+.figure-picker legend {
+  font-size: 12px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.figure-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.figure-choice {
+  min-width: 44px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 5px 2px;
+  border: 2px solid #d5dacb;
+  background: #f6f5ed;
+  font-size: 9px;
+}
+.figure-choice .figure-svg {
+  width: 42px;
+  height: 42px;
+}
+.figure-choice[aria-pressed="true"] {
+  border-color: var(--player);
+  background: #fffdf6;
+  box-shadow:
+    inset 0 -4px var(--player),
+    0 2px 6px #27392c22;
+}
+.figure-choice:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.square .tokens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 22px));
+  gap: 1px;
+  justify-content: center;
+  width: 100%;
+}
+.square .token {
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  padding: 0;
+  border-width: 2px;
+}
+.square.occupied {
+  overflow: visible;
+  z-index: 1;
+}
+.square .sq-icon .field-svg {
+  width: 24px;
+  height: 24px;
+}
+.buildings .field-svg {
+  width: 10px;
+  height: 10px;
+}
+#detail h2 > .field-svg {
+  width: 40px;
+  height: 40px;
+}
+@media (max-width: 1100px) and (min-width: 821px) {
+  .square .tokens {
+    grid-template-columns: repeat(2, 16px);
+  }
+  .square .token {
+    width: 16px;
+    height: 16px;
+  }
+}
+@media (max-width: 560px) {
+  .setup-card {
+    padding: 16px;
+  }
+  .square .tokens {
+    grid-template-columns: repeat(2, 13px);
+    min-height: 13px;
+  }
+  .square .token {
+    width: 13px;
+    height: 13px;
+    flex: none;
+    border-width: 1.5px;
+  }
+  .square.occupied .sq-name {
+    font-size: 6px;
+  }
+  .square .sq-icon .field-svg {
+    width: 14px;
+    height: 14px;
+  }
+}
