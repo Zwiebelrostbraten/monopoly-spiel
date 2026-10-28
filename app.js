@@ -1,5 +1,5 @@
 import { avatars, resolveAvatar, figureSVG, fieldSVG } from "./visuals.js";
-import { createGame, act, board, active, chooseStarter } from "./engine.js";
+import { createGame, act, board, active, chooseStarter, migrateSave } from "./engine.js";
 import { decks } from "./data.js";
 const $ = (s) => document.querySelector(s),
   app = $("#app"),
@@ -44,7 +44,10 @@ try {
     "Der gespeicherte Spielstand konnte nicht geladen werden. Ein neues Spiel ist möglich.",
   );
 }
-if (state) selected = state.current;
+if (state) {
+  selected = state.current;
+  if (migrateSave(state)) { save(); toast("Spielstand übernommen. Offene Vergaben wurden übersprungen."); }
+}
 function toast(text) {
   $("#toast").textContent = text;
   $("#toast").classList.add("show");
@@ -174,7 +177,7 @@ function boardHTML() {
               : null,
           )
           .filter((i) => i !== null);
-      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""}" style="grid-row:${r};grid-column:${c};--stripe:${b.color || "#7e9380"};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || fieldSVG("house")}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? fieldSVG("hotel") : fieldSVG("house").repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "+200" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
+      return `<button class="square ${b.id % 10 === 0 ? "corner" : ""} ${e?.mortgage ? "mortgaged" : ""} ${occupants.length ? "occupied" : ""}" style="grid-row:${r};grid-column:${c};--stripe:${b.color || "#7e9380"};--owner:${e?.owner !== null ? palette[e?.owner] : "transparent"}" data-square="${b.id}" aria-label="${esc(b.name)}${b.price ? ", " + b.price : ""}${e?.owner !== null && e ? " · " + esc(state.players[e.owner].name) : ""}${occupants.length ? " · " + occupants.map((i) => esc(state.players[i].name)).join(", ") : ""}">${b.type === "street" ? '<span class="stripe"></span>' : `<span class="sq-icon" aria-hidden="true">${icons[b.type] || fieldSVG("house")}</span>`}<span class="sq-name">${esc(b.name)}</span>${e?.level ? `<span class="buildings" aria-label="${e.level === 5 ? "Hotel" : e.level + " Häuser"}">${e.level === 5 ? fieldSVG("hotel") : fieldSVG("house").repeat(e.level)}</span>` : ""}<span class="sq-price">${e?.mortgage ? "Hypothek" : b.price ? money(b.price) : b.type === "go" ? "Direkt +400" : ""}</span><span class="tokens">${occupants.map(token).join("")}</span>${e?.owner !== null && e ? '<span class="owner-mark"></span>' : ""}</button>`;
     })
     .join(
       "",
@@ -205,19 +208,16 @@ function actionsHTML() {
     return `<p class="action-message">${p.out ? "Du bist ausgeschieden." : "Alles erledigt. Du kannst noch bauen und handeln."} Gib das Gerät danach an die nächste Person.</p><div class="action-buttons">${button("Zug beenden →", "end", "primary")}</div>`;
   if (state.phase === "buy") {
     const { id, player } = state.purchase;
-    return `<p class="eyebrow">EINE NEUE GELEGENHEIT</p><h3>${esc(board[id].name)}</h3><p class="action-message">Für ${money(board[id].price)} gehört dieses Grundstück ${esc(state.players[player].name)}. Oder alle bieten in einer Auktion.</p><div class="action-buttons">${button("Kaufen · " + money(board[id].price), "buy", "primary", state.players[player].cash < board[id].price ? "disabled" : "")}${button("Versteigern", "decline")}</div>${button("Besitzkarte ansehen", "viewPurchase", "quiet")}`;
+    return `<p class="eyebrow">EINE NEUE GELEGENHEIT</p><h3>${esc(board[id].name)}</h3><p class="action-message">Für ${money(board[id].price)} gehört dieses Grundstück ${esc(state.players[player].name)}. Beim Ablehnen bleibt es bei der Bank.</p><div class="action-buttons">${button("Kaufen · " + money(board[id].price), "buy", "primary", state.players[player].cash < board[id].price ? "disabled" : "")}${button("Nicht kaufen", "decline")}</div>${button("Besitzkarte ansehen", "viewPurchase", "quiet")}`;
   }
   if (state.phase === "card")
-    return `<p class="eyebrow">${state.card.deck === "chance" ? "EREIGNIS" : "GEMEINSCHAFT"}</p><div class="card-message">${esc(state.card.text)}</div><div class="action-buttons">${button("Karte ausführen →", "ackCard", "primary")}</div><p class="muted" style="margin:10px 0 0;font-size:11px">Die Karte ist gezogen. Bewegungen und Zahlungen folgen beim Bestätigen.</p>`;
+    return `<p class="eyebrow">${state.card.deck === "chance" ? "EREIGNIS" : "GEMEINSCHAFT"}</p><div class="card-message">${esc(decks[state.card.deck][state.card.index].text)}</div><div class="action-buttons">${button("Karte ausführen →", "ackCard", "primary")}</div><p class="muted" style="margin:10px 0 0;font-size:11px">Die Karte ist gezogen. Bewegungen und Zahlungen folgen beim Bestätigen.</p>`;
   if (state.phase === "transfer") {
     const t = state.transfer,
       b = board[t.id];
     return `<p class="eyebrow">HYPOTHEK ÜBERNOMMEN</p><h3>${esc(state.players[t.player].name)} · ${esc(b.name)}</h3><p class="action-message">Wähle jetzt: die Hypothek sofort für ${money(Math.ceil((b.price * 11) / 20))} ablösen oder sie behalten und ${money(Math.ceil(b.price / 20))} Übernahmezinsen zahlen. Späteres Ablösen kostet zusätzlich den normalen Ablösebetrag.</p><div class="action-buttons">${button("Sofort ablösen", "transferRedeem", "primary")}${button("Belastet behalten", "transferKeep")}</div>`;
   }
-  if (state.phase === "auction") {
-    const a = state.auction;
-    return `<p class="auction-title">AUKTION · ${a.kind === "building" ? "KNAPPES GEBÄUDE" : esc(board[a.id].name)}</p><h3>${esc(state.players[a.turn].name)} bietet jetzt</h3><p class="action-message">${a.leader === null ? "Noch kein Gebot. Start bei 10." : `${money(a.bid)} von ${esc(state.players[a.leader].name)}`}<br>Verfügbar: ${money(state.players[a.turn].cash)}<br>${a.passed.length ? "Ausgestiegen: " + a.passed.map((i) => esc(state.players[i].name)).join(", ") : "Alle aktiven Personen dürfen mitbieten."}</p><form id="bidForm"><div class="bid-input"><input id="bidAmount" aria-label="Gebot" type="number" min="${Math.max(10, a.bid + 1)}" max="${state.players[a.turn].cash}" value="${Math.max(10, a.bid + 1)}" step="1" required><button class="primary" type="submit">Bieten</button></div></form>${button("Passen · aussteigen", "pass", "small")}<p class="muted" style="font-size:10px;margin:10px 0 0">Gerät reihum weitergeben. Höchstgebot gewinnt; ein Pass ist endgültig.</p>`;
-  }
+
   if (state.phase === "debt") {
     const d = state.debt;
     return `<div class="debt-box"><p class="eyebrow">ZAHLUNG OFFEN</p><h3>${esc(state.players[d.from].name)} braucht ${money(d.amount)}</h3><p class="action-message">An ${d.to === null ? "die Bank" : esc(state.players[d.to].name)} · ${esc(d.reason)}<br>Bargeld: ${money(state.players[d.from].cash)}. Verkaufe Gebäude, nutze Hypotheken oder handle. Wähle dazu unten ein eigenes Grundstück.</p></div><div class="action-buttons">${button("Vermögen verwalten", "showDebtor", "primary")}${button("Insolvenz erklären", "confirmBankrupt", "danger")}</div>`;
@@ -241,9 +241,9 @@ function render() {
       )
       .join("") ||
     '<p class="muted">Noch kein Grundbesitz. Jede große Geschichte fängt auf LOS an.</p>'
-  }</div></div></section><aside class="sidebar"><section class="panel turn-panel" aria-label="Aktuelle Aktion" aria-live="polite"><div class="turn-label"><p class="eyebrow">${state.phase === "won" ? "SPIELENDE" : "AM ZUG"}</p><span class="badge">${p.jail !== null ? "Gefängnis" : "Runde " + state.round}</span></div><h2 class="turn-name">${token(state.current)} ${esc(p.name)}</h2><div id="actions">${actionsHTML()}</div></section><section class="panel players-panel"><p class="eyebrow">DIE RUNDE</p>${state.players.map((q, i) => `<button class="player-row ${i === state.current ? "current" : ""} ${i === selected ? "chosen" : ""} ${q.out ? "out" : ""}" data-player="${i}" ${q.out ? "disabled" : ""}>${token(i)}<span>${esc(q.name)}<small>${q.out ? "Ausgeschieden" : `${Object.values(state.estates).filter((e) => e.owner === i).length} Grundstücke · ${q.cards.length} Frei-Karten${q.jail !== null ? " · Gefängnis" : ""}`}</small></span><span class="money">${money(q.cash)}</span></button>`).join("")}<div class="tools">${button("⇄ Handeln", "openTrade", "small", !["roll", "end", "debt"].includes(state.phase) || state.trade ? "disabled" : "")}${button("⌂ Gebäudewettbewerb", "buildingContest", "small", !["roll", "end"].includes(state.phase) || state.trade ? "disabled" : "")}</div></section><section class="panel log-panel"><p class="eyebrow">DAS SPIELGESCHICHTEBUCH</p><ol class="log" start="${Math.max(1, state.log.length - 29)}">${state.log
+  }</div></div></section><aside class="sidebar"><section class="panel turn-panel" aria-label="Aktuelle Aktion" aria-live="polite"><div class="turn-label"><p class="eyebrow">${state.phase === "won" ? "SPIELENDE" : "AM ZUG"}</p><span class="badge">${p.jail !== null ? "Gefängnis" : "Runde " + state.round}</span></div><h2 class="turn-name">${token(state.current)} ${esc(p.name)}</h2><div id="actions">${actionsHTML()}</div></section><section class="panel players-panel"><p class="eyebrow">DIE RUNDE</p>${state.players.map((q, i) => `<button class="player-row ${i === state.current ? "current" : ""} ${i === selected ? "chosen" : ""} ${q.out ? "out" : ""}" data-player="${i}" ${q.out ? "disabled" : ""}>${token(i)}<span>${esc(q.name)}<small>${q.out ? "Ausgeschieden" : `${Object.values(state.estates).filter((e) => e.owner === i).length} Grundstücke · ${q.cards.length} Frei-Karten${q.jail !== null ? " · Gefängnis" : ""}`}</small></span><span class="money">${money(q.cash)}</span></button>`).join("")}<div class="tools">${button("⇄ Handeln", "openTrade", "small", !["roll", "end", "debt"].includes(state.phase) || state.trade ? "disabled" : "")}</div></section><section class="panel log-panel"><p class="eyebrow">DAS SPIELGESCHICHTEBUCH</p><ol class="log" start="${Math.max(1, state.log.length - 29)}">${state.log
     .slice(-30)
-    .map((l) => `<li>${esc(l)}</li>`)
+    .map((l) => `<li>${esc(l.replace(/^Auktion:/, "Frühere Vergabe:"))}</li>`)
     .join(
       "",
     )}</ol></section></aside></div><span class="board-live" role="status">${esc(p.name)}, ${esc(board[p.pos].name)}.</span>`;
@@ -258,11 +258,6 @@ function render() {
       }),
   );
   wireActions(app);
-  if ($("#bidForm"))
-    $("#bidForm").onsubmit = (e) => {
-      e.preventDefault();
-      execute("bid", { amount: Number($("#bidAmount").value) });
-    };
   const logEl = $(".log");
   if (logEl) logEl.scrollTop = logEl.scrollHeight;
   if (busy)
@@ -288,7 +283,7 @@ function showDeed(id) {
     e = state.estates[id];
   if (!e) {
     open(
-      `<p class="eyebrow">FELD ${id}</p><h2>${icons[b.type] || ""} ${esc(b.name)}</h2><p>${{ go: "Beim Vorwärts-Überqueren oder Erreichen zahlt die Bank 200.", chance: "Ziehe eine Ereigniskarte und führe ihre Wirkung aus.", community: "Ziehe eine Gemeinschaftskarte und führe ihre Wirkung aus.", jail: "Hier bist du nur zu Besuch, wenn du regulär landest. Gefängnisstrafen dauern höchstens drei Würfelversuche.", gojail: "Direkt ins Gefängnis, ohne LOS-Gehalt. Dein Zug endet.", parking: "Eine ruhige Pause. Kein Geld und keine weitere Aktion.", tax: "Zahle " + money(b.price) + " an die Bank." }[b.type]}</p>`,
+      `<p class="eyebrow">FELD ${id}</p><h2>${icons[b.type] || ""} ${esc(b.name)}</h2><p>${{ go: "Vorwärts direkt auf LOS: insgesamt 400 M (200 Gehalt + 200 Bonus). Beim Überqueren: 200 M. Rückwärts gibt es kein Gehalt.", chance: "Ziehe eine Ereigniskarte und führe ihre Wirkung aus.", community: "Ziehe eine Gemeinschaftskarte und führe ihre Wirkung aus.", jail: "Hier bist du nur zu Besuch, wenn du regulär landest. Gefängnisstrafen dauern höchstens drei Würfelversuche.", gojail: "Direkt ins Gefängnis, ohne LOS-Gehalt. Dein Zug endet.", parking: "Eine ruhige Pause. Kein Geld und keine weitere Aktion.", tax: "Zahle " + money(b.price) + " an die Bank." }[b.type]}</p>`,
     );
     return;
   }
@@ -385,38 +380,6 @@ function openTrade() {
     }
   };
 }
-function buildingContest() {
-  open(
-    `<p class="eyebrow">KNAPPES ANGEBOT</p><h2>Wenn Gebäude knapp werden.</h2><p class="muted">Wenn mehr Personen ein Gebäude wünschen als die Bank vorrätig hat, wird ein Gebäude versteigert. Jede Person wählt ein rechtmäßig bebaubares Grundstück. Der Gewinner baut dort zum Gebotspreis. Bei weiterem Engpass eröffnet ihr die nächste Auktion.</p><form id="buildingForm"><label>Gebäudetyp <select id="buildingKind"><option value="house">Haus (${state.houses} verfügbar)</option><option value="hotel">Hotel (${state.hotels} verfügbar)</option></select></label><div class="building-entries">${active(
-      state,
-    )
-      .map(
-        (i) =>
-          `<label>${esc(state.players[i].name)}<select data-building-player="${i}"><option value="">Bietet nicht mit</option>${Object.entries(
-            state.estates,
-          )
-            .filter(([id, e]) => e.owner === i && board[id].type === "street")
-            .map(
-              ([id]) => `<option value="${id}">${esc(board[id].name)}</option>`,
-            )
-            .join("")}</select></label>`,
-      )
-      .join(
-        "",
-      )}</div><button class="primary" type="submit">Gebäude versteigern</button></form>`,
-  );
-  $("#buildingForm").onsubmit = (e) => {
-    e.preventDefault();
-    const entries = [...content.querySelectorAll("[data-building-player]")]
-      .filter((el) => el.value !== "")
-      .map((el) => ({
-        player: Number(el.dataset.buildingPlayer),
-        id: Number(el.value),
-      }));
-    if (execute("buildingAuction", { kind: $("#buildingKind").value, entries }))
-      detail.close();
-  };
-}
 function handle(action) {
   if (busy) return;
   if (action === "explore") {
@@ -435,10 +398,7 @@ function handle(action) {
     openTrade();
     return;
   }
-  if (action === "buildingContest") {
-    buildingContest();
-    return;
-  }
+
   if (action === "showDebtor") {
     selected = state.debt.from;
     render();

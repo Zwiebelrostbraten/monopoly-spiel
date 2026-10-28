@@ -99,21 +99,17 @@ function enqueue(s, ...tasks) {
 function payment(from, to, amount, reason = "Zahlung") {
   return { type: "pay", from, to, amount, reason };
 }
-function auction(s, id, kind = "deed", eligible = active(s)) {
-  s.auction = {
-    id,
-    kind,
-    eligible,
-    passed: [],
-    bid: 0,
-    leader: null,
-    turn: eligible[0],
-  };
-  s.phase = "auction";
-  log(
-    s,
-    `Auktion: ${board[id].name}${kind === "building" ? " · Gebäude" : ""}.`,
-  );
+// Legacy bids were charged only on award, never while pending.
+// Normalize only removed states; ordinary saves (including animation) are untouched.
+export function migrateSave(s) {
+  const pending = s.phase === "auction";
+  const queued = s.queue.some((t) => t.type === "auction");
+  if (!pending && !queued && !s.auction) return false;
+  s.queue = s.queue.filter((t) => t.type !== "auction");
+  s.auction = null;
+  if (pending) run(s);
+  log(s, "Spielstand angepasst: Offene Vergaben entfallen; Besitz und Guthaben bleiben erhalten.");
+  return true;
 }
 function cardEffect(s, k, p) {
   const index = s.decks[k].shift(),
@@ -206,9 +202,12 @@ export function run(s, rng = Math.random) {
     if (t.type === "move") {
       const p = s.players[t.player];
       if (p.out) continue;
-      if ((!t.back && t.target < p.pos) || (!t.back && t.target === 0)) {
-        p.cash += 200;
-        log(s, `${p.name} erhält 200 für LOS.`);
+      const steps = t.steps ?? ((t.target - p.pos + 40) % 40);
+      const crossings = t.back ? 0 : Math.floor((p.pos + steps) / 40);
+      const salary = crossings * 200 + (!t.back && steps > 0 && t.target === 0 ? 200 : 0);
+      if (salary) {
+        p.cash += salary;
+        log(s, `${p.name} erhält ${salary} für LOS${t.target === 0 ? " (inklusive 200 Bonus)" : ""}.`);
       }
       p.pos = t.target;
       enqueue(s, { type: "land", player: t.player, mult: t.mult });
@@ -266,10 +265,10 @@ export function run(s, rng = Math.random) {
         type: "move",
         player: t.player,
         target: (s.players[t.player].pos + t.steps) % 40,
+        steps: t.steps,
       });
     } else if (t.type === "auction") {
-      auction(s, t.id);
-      return;
+      continue; // Skip tasks from older saved games.
     } else if (t.type === "finish") {
       s.phase = s.extra ? "roll" : "end";
       return;
@@ -285,7 +284,7 @@ function manage(s, action, { id, player }) {
     e && e.owner === player && !p.out,
     "Dieses Grundstück gehört dir nicht.",
   );
-  ensure(!s.trade && !s.auction, "Zuerst Handel oder Auktion abschließen.");
+  ensure(!s.trade, "Zuerst Handel abschließen.");
   if (s.debt)
     ensure(
       s.debt.from === player &&
@@ -433,7 +432,7 @@ export function act(s, action, args = {}, rng = Math.random) {
       if (dbl) {
         p.jail = null;
         s.queue = [
-          { type: "move", player: s.current, target: (p.pos + steps) % 40 },
+          { type: "move", player: s.current, target: (p.pos + steps) % 40, steps },
           { type: "finish" },
         ];
       } else {
@@ -454,7 +453,7 @@ export function act(s, action, args = {}, rng = Math.random) {
       } else {
         s.extra = dbl;
         s.queue = [
-          { type: "move", player: s.current, target: (p.pos + steps) % 40 },
+          { type: "move", player: s.current, target: (p.pos + steps) % 40, steps },
           { type: "finish" },
         ];
       }
@@ -487,7 +486,7 @@ export function act(s, action, args = {}, rng = Math.random) {
     const { id, player } = s.purchase;
     ensure(
       s.players[player].cash >= board[id].price,
-      "Nicht genügend Bargeld. Bitte versteigern.",
+      "Nicht genügend Bargeld. Du kannst den Kauf ablehnen.",
     );
     s.players[player].cash -= board[id].price;
     s.estates[id].owner = player;
@@ -499,51 +498,9 @@ export function act(s, action, args = {}, rng = Math.random) {
     run(s, rng);
   } else if (action === "decline") {
     ensure(s.phase === "buy", "Kein Kauf offen.");
-    const id = s.purchase.id;
+    log(s, `${board[s.purchase.id].name} bleibt bei der Bank.`);
     s.purchase = null;
-    auction(s, id);
-  } else if (action === "bid" || action === "pass") {
-    ensure(s.phase === "auction", "Keine Auktion offen.");
-    const a = s.auction,
-      i = a.turn;
-    if (action === "bid") {
-      const n = Number(args.amount);
-      ensure(
-        Number.isInteger(n) &&
-          n >= Math.max(10, a.bid + 1) &&
-          n <= s.players[i].cash,
-        "Gebot muss mindestens 10, höher als bisher und bar bezahlbar sein.",
-      );
-      a.bid = n;
-      a.leader = i;
-      log(s, `${s.players[i].name} bietet ${n}.`);
-    } else {
-      a.passed.push(i);
-      log(s, `${s.players[i].name} passt.`);
-    }
-    const left = a.eligible.filter((i) => !a.passed.includes(i));
-    if (!left.length || (left.length === 1 && a.leader === left[0])) {
-      if (a.leader !== null) {
-        s.players[a.leader].cash -= a.bid;
-        if (a.kind === "building") {
-          const e = s.estates[a.targets[a.leader]];
-          if (e.level === 4) {
-            s.hotels--;
-            s.houses += 4;
-          } else s.houses--;
-          e.level++;
-        } else s.estates[a.id].owner = a.leader;
-        log(s, `${s.players[a.leader].name} gewinnt für ${a.bid}.`);
-      } else log(s, "Keine Gebote: Das Grundstück bleibt bei der Bank.");
-      s.auction = null;
-      run(s, rng);
-    } else {
-      let next = i;
-      do {
-        next = (next + 1) % s.players.length;
-      } while (!left.includes(next) || next === a.leader);
-      a.turn = next;
-    }
+    run(s, rng);
   } else if (action === "ackCard") {
     ensure(s.phase === "card", "Keine Karte offen.");
     s.card = null;
@@ -592,7 +549,6 @@ export function act(s, action, args = {}, rng = Math.random) {
         e.owner = credit;
         if (credit === null) {
           e.mortgage = false;
-          tasks.push({ type: "auction", id: Number(id) });
         } else if (e.mortgage)
           tasks.push({
             type: "transferMortgage",
@@ -645,55 +601,6 @@ export function act(s, action, args = {}, rng = Math.random) {
         : []),
     );
     run(s, rng);
-  } else if (action === "buildingAuction") {
-    ensure(
-      ["roll", "end"].includes(s.phase) && !s.trade,
-      "Zuerst die laufende Aktion abschließen.",
-    );
-    const hotel = args.kind === "hotel";
-    const stock = hotel ? s.hotels : s.houses;
-    ensure(stock > 0, "Die Bank hat kein passendes Gebäude.");
-    ensure(
-      args.entries?.length > stock,
-      "Mehr bauwillige Personen als verfügbare Gebäude wählen.",
-    );
-    const seen = new Set();
-    for (const { player, id } of args.entries) {
-      const e = s.estates[id];
-      ensure(
-        !seen.has(player) && active(s).includes(player),
-        "Jede aktive Person darf genau einmal teilnehmen.",
-      );
-      seen.add(player);
-      ensure(
-        board[id]?.type === "street" &&
-          e.owner === player &&
-          complete(s, id, player),
-        "Vollständige eigene Farbgruppe erforderlich.",
-      );
-      const g = group(s, id);
-      ensure(
-        g.every((i) => !s.estates[i].mortgage) &&
-          e.level === Math.min(...g.map((i) => s.estates[i].level)) &&
-          e.level === (hotel ? 4 : e.level) &&
-          e.level < (hotel ? 5 : 4),
-        "Das gewählte Grundstück kann dieses Gebäude nicht erhalten.",
-      );
-      ensure(
-        s.players[player].cash >= 10,
-        "Mindestens 10 Bargeld pro Person erforderlich.",
-      );
-    }
-    s.queue.push({ type: "resume", phase: s.phase });
-    auction(
-      s,
-      args.entries[0].id,
-      "building",
-      args.entries.map((e) => e.player),
-    );
-    s.auction.targets = Object.fromEntries(
-      args.entries.map((e) => [e.player, e.id]),
-    );
   } else if (action === "trade") {
     ensure(
       ["roll", "end", "debt"].includes(s.phase) && !s.trade,

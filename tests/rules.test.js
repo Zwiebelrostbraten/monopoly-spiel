@@ -69,25 +69,12 @@ test("released jail doubles do not grant extra roll", () => {
   assert.equal(s.players[0].pos, 20);
   assert.equal(s.phase, "end");
 });
-test("auction includes decliner, constrains bids, passes and awards", () => {
-  let s = game();
-  act(s, "roll", { dice: [1, 2] });
-  act(s, "decline");
-  assert.equal(s.auction.turn, 0);
-  assert.throws(() => act(s, "bid", { amount: 1501 }));
-  act(s, "bid", { amount: 10 });
-  act(s, "pass");
-  assert.equal(s.estates[3].owner, 0);
-  assert.equal(s.players[0].cash, 1490);
+test("decliner retains cash and leaves deed in bank", () => {
+ const s=game(); act(s,"roll",{dice:[1,2]}); act(s,"decline");
+ assert.equal(s.estates[3].owner,null); assert.equal(s.players[0].cash,1500); assert.equal(s.phase,"end");
 });
-test("all pass leaves deed at bank", () => {
-  let s = game();
-  act(s, "roll", { dice: [1, 2] });
-  act(s, "decline");
-  act(s, "pass");
-  act(s, "pass");
-  assert.equal(s.estates[3].owner, null);
-  assert.equal(s.phase, "end");
+test("unaffordable purchase can be declined", () => {
+ const s=game();s.players[0].cash=0;act(s,"roll",{dice:[1,2]});assert.throws(()=>act(s,"buy"));act(s,"decline");assert.equal(s.estates[3].owner,null);assert.equal(s.phase,"end");
 });
 test("even construction, hotel conversion, limited stock and even selling", () => {
   let s = game();
@@ -125,7 +112,7 @@ test("debt pauses queued actions and mortgage can settle it", () => {
   assert.equal(s.players[1].cash, 1600);
   assert.equal(s.players[0].cash, 100);
 });
-test("bank bankruptcy returns cards, clears mortgages and auctions deeds", () => {
+test("bank bankruptcy returns cards and clears mortgages", () => {
   let s = game();
   own(s, [1, 3]);
   s.players[0].cash = 0;
@@ -186,39 +173,11 @@ test("empty house stock and hotel downgrade shortage are enforced", () => {
   assert.equal(s.players[0].cash, 250);
   assert.equal(s.phase, "debt");
 });
-test("last house auction builds on the winner’s chosen eligible street", () => {
-  const s = game();
-  own(s, [1, 3]);
-  own(s, [37, 39], 1);
-  s.houses = 1;
-  act(s, "buildingAuction", {
-    kind: "house",
-    entries: [
-      { player: 0, id: 1 },
-      { player: 1, id: 37 },
-    ],
-  });
-  act(s, "bid", { amount: 20 });
-  act(s, "bid", { amount: 30 });
-  act(s, "pass");
-  assert.equal(s.estates[37].level, 1);
-  assert.equal(s.houses, 0);
-  assert.equal(s.players[1].cash, 1470);
-  assert.equal(s.phase, "roll");
+test("last house goes to first legal purchaser at list price", () => {
+ const s=game();own(s,[1,3]);own(s,[37,39],1);s.houses=1;act(s,"build",{id:1,player:0});assert.throws(()=>act(s,"build",{id:37,player:1}));assert.equal(s.houses,0);assert.equal(s.estates[1].level,1);assert.equal(s.players[0].cash,1450);assert.equal(s.players[1].cash,1500);
 });
-test("third person can win auction, bidder cannot overspend or leave while leading", () => {
-  const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
-  s.queue = [{ type: "finish" }];
-  s.phase = "buy";
-  s.purchase = { id: 1, player: 0 };
-  act(s, "decline");
-  act(s, "bid", { amount: 10 });
-  act(s, "bid", { amount: 20 });
-  act(s, "pass");
-  assert.equal(s.auction.turn, 0);
-  act(s, "pass");
-  assert.equal(s.estates[1].owner, 1);
-  assert.equal(s.players[1].cash, 1480);
+test("removed bidding actions cannot alter ownership", () => {
+ const s=game();for(const a of ["bid","pass","buildingAuction"])assert.throws(()=>act(s,a,{amount:10}));assert.equal(s.phase,"roll");assert.equal(s.estates[1].owner,null);
 });
 test("bankruptcy to player transfers cash, deeds, free cards and prompts mortgage interest", () => {
   const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
@@ -241,7 +200,7 @@ test("bankruptcy to player transfers cash, deeds, free cards and prompts mortgag
   act(s, "end");
   assert.equal(s.current, 1);
 });
-test("bank bankruptcy auctions every deed in order with cleared mortgages", () => {
+test("bank bankruptcy returns every deed unowned with cleared mortgages", () => {
   const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
   own(s, [1, 3]);
   s.estates[1].mortgage = true;
@@ -254,14 +213,8 @@ test("bank bankruptcy auctions every deed in order with cleared mortgages", () =
   ];
   run(s);
   act(s, "bankrupt");
-  assert.equal(s.phase, "auction");
-  assert.equal(s.auction.id, 1);
-  assert.equal(s.estates[1].mortgage, false);
-  act(s, "bid", { amount: 10 });
-  act(s, "pass");
-  assert.equal(s.auction.id, 3);
-  act(s, "pass");
-  act(s, "pass");
+  for (const id of [1,3]) { assert.equal(s.estates[id].owner,null); assert.equal(s.estates[id].mortgage,false); }
+  assert.equal(s.auction,null);
   assert.equal(s.phase, "end");
   assert.equal(s.decks.chance.includes(8), true);
 });
@@ -379,7 +332,7 @@ test("all 32 cards are executable, returned or retained, with no placeholders", 
 });
 test("card GO salary, advance over GO, backward does not collect", () => {
   let s = draw("chance", 0);
-  assert.equal(s.players[0].cash, 1700);
+  assert.equal(s.players[0].cash, 1900);
   assert.equal(s.players[0].pos, 0);
   s = draw("chance", 2, { pos: 36 });
   assert.equal(s.players[0].cash, 1700);
@@ -456,15 +409,8 @@ test("card jail does not pay GO, cancels doubles and requires acknowledgment", (
   assert.equal(s.players[0].cash, 1500);
   assert.equal(s.phase, "end");
 });
-test("round-trip JSON preserves pending auction and debt semantics", () => {
-  let s = game();
-  act(s, "roll", { dice: [1, 2] });
-  act(s, "decline");
-  act(s, "bid", { amount: 15 });
-  s = JSON.parse(JSON.stringify(s));
-  act(s, "pass");
-  assert.equal(s.estates[3].owner, 0);
-  assert.equal(s.phase, "end");
+test("round-trip JSON preserves declined purchase turn", () => {
+ let s=game();act(s,"roll",{dice:[1,2]});act(s,"decline");s=JSON.parse(JSON.stringify(s));assert.equal(s.phase,"end");assert.equal(s.estates[3].owner,null);act(s,"end");assert.equal(s.current,1);
 });
 test("starting roll breaks ties and chooses highest", async () => {
   const { chooseStarter } = await import("../engine.js");
@@ -474,26 +420,8 @@ test("starting roll breaks ties and chooses highest", async () => {
   assert.equal(s.current, 1);
 });
 
-test("scarce stock with three applicants and two houses can be auctioned one by one", () => {
-  const s = createGame([{ name: "A" }, { name: "B" }, { name: "C" }]);
-  own(s, [1, 3], 0);
-  own(s, [6, 8, 9], 1);
-  own(s, [37, 39], 2);
-  s.houses = 2;
-  act(s, "buildingAuction", {
-    kind: "house",
-    entries: [
-      { player: 0, id: 1 },
-      { player: 1, id: 6 },
-      { player: 2, id: 37 },
-    ],
-  });
-  act(s, "bid", { amount: 10 });
-  act(s, "pass");
-  act(s, "pass");
-  assert.equal(s.houses, 1);
-  assert.equal(s.estates[1].level, 1);
-  assert.equal(s.phase, "roll");
+test("two scarce houses go to the first two legal purchases", () => {
+ const s=createGame([{name:"A"},{name:"B"},{name:"C"}]);own(s,[1,3]);own(s,[6,8,9],1);own(s,[37,39],2);s.houses=2;act(s,"build",{id:1,player:0});act(s,"build",{id:6,player:1});assert.throws(()=>act(s,"build",{id:37,player:2}));assert.equal(s.houses,0);assert.equal(s.estates[1].level,1);assert.equal(s.estates[6].level,1);assert.equal(s.estates[37].level,0);
 });
 
 test("mortgage redemption uses exact integer ratios before rounding, including stations", () => {

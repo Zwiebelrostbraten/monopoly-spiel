@@ -1,0 +1,249 @@
+{
+  "version": 1,
+  "players": [
+    {
+      "name": "A",
+      "cash": 1500,
+      "pos": 0,
+      "jail": null,
+      "cards": [],
+      "out": false
+    },
+    {
+      "name": "B",
+      "cash": 1500,
+      "pos": 0,
+      "jail": null,
+      "cards": [],
+      "out": false
+    },
+    {
+      "name": "C",
+      "cash": 1500,
+      "pos": 0,
+      "jail": null,
+      "cards": [],
+      "out": false
+    }
+  ],
+  "estates": {
+    "1": {
+      "owner": 0,
+      "level": 0,
+      "mortgage": false
+    },
+    "3": {
+      "owner": 0,
+      "level": 0,
+      "mortgage": false
+    },
+    "5": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "6": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "8": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "9": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "11": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "12": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "13": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "14": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "15": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "16": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "18": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "19": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "21": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "23": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "24": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "25": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "26": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "27": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "28": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "29": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "31": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "32": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "34": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "35": {
+      "owner": null,
+      "level": 0,
+      "mortgage": false
+    },
+    "37": {
+      "owner": 1,
+      "level": 0,
+      "mortgage": false
+    },
+    "39": {
+      "owner": 1,
+      "level": 0,
+      "mortgage": false
+    }
+  },
+  "current": 0,
+  "phase": "auction",
+  "doubles": 0,
+  "extra": false,
+  "dice": [
+    1,
+    1
+  ],
+  "houses": 1,
+  "hotels": 12,
+  "decks": {
+    "chance": [
+      9,
+      0,
+      7,
+      1,
+      12,
+      14,
+      2,
+      8,
+      3,
+      10,
+      11,
+      4,
+      13,
+      5,
+      15,
+      6
+    ],
+    "community": [
+      9,
+      0,
+      7,
+      1,
+      12,
+      14,
+      2,
+      8,
+      3,
+      10,
+      11,
+      4,
+      13,
+      5,
+      15,
+      6
+    ]
+  },
+  "queue": [
+    {
+      "type": "resume",
+      "phase": "roll"
+    }
+  ],
+  "log": [
+    "Willkommen zum Spielabend!",
+    "Auktion: Badstraße · Gebäude.",
+    "A bietet 200."
+  ],
+  "round": 1,
+  "card": null,
+  "auction": {
+    "id": 1,
+    "kind": "building",
+    "eligible": [
+      0,
+      1
+    ],
+    "passed": [],
+    "bid": 200,
+    "leader": 0,
+    "turn": 1,
+    "targets": {
+      "0": 1,
+      "1": 37
+    }
+  },
+  "trade": null
+}

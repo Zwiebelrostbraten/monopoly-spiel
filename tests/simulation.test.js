@@ -55,16 +55,7 @@ test("seeded full games: valid stock, decks, cash, elimination and terminal winn
           {},
           rng,
         );
-      else if (s.phase === "auction") {
-        const a = s.auction;
-        const bid = Math.max(10, a.bid + 1);
-        act(
-          s,
-          s.players[a.turn].cash >= bid && rng() > 0.55 ? "bid" : "pass",
-          { amount: bid },
-          rng,
-        );
-      } else if (s.phase === "card") act(s, "ackCard", {}, rng);
+      else if (s.phase === "card") act(s, "ackCard", {}, rng);
       else if (s.phase === "transfer") act(s, "transferKeep", {}, rng);
       else if (s.phase === "debt") {
         const debtor = s.debt.from,

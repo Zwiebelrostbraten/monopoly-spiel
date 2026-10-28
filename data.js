@@ -67,7 +67,7 @@ for (const [id, name, type, price] of [
 // Original short descriptions; effects follow the German classic card sets.
 export const decks = {
   chance: [
-    { text: "Auf nach LOS. Die Bank zahlt 200.", move: 0 },
+    { text: "Auf nach LOS. Die Bank zahlt insgesamt 400 M (200 Gehalt + 200 Bonus).", move: 0 },
     { text: "Ein Termin in der Schlossallee. Reise dorthin.", move: 39 },
     { text: "Besuche die Seestraße. LOS zählt auf dem Weg.", move: 11 },
     { text: "Premiere am Opernplatz. Reise dorthin; LOS zählt.", move: 24 },
@@ -100,7 +100,7 @@ export const decks = {
     { text: "Deine Anlage zahlt sich aus: 150 von der Bank.", money: 150 },
   ],
   community: [
-    { text: "Auf nach LOS. Die Bank zahlt 200.", move: 0 },
+    { text: "Auf nach LOS. Die Bank zahlt insgesamt 400 M (200 Gehalt + 200 Bonus).", move: 0 },
     { text: "Eine Bankkorrektur bringt dir 200.", money: 200 },
     { text: "Die Arztkosten betragen 50.", money: -50 },
     { text: "Ein Verkauf bringt dir 50.", money: 50 },
