@@ -79,7 +79,12 @@ PLAYWRIGHT_MODULE="$HOME/.cache/stadt-browser/node_modules/playwright/index.mjs"
   node scripts/browser-smoke.mjs
 ```
 
-Set `CHROMIUM_PATH` to an existing browser executable when appropriate, `GAME_URL` for a different server, and `SCREENSHOT_DIR` for optional desktop/mobile captures. This checks figure selection/swaps, 44px selection targets, unchanged legacy saves, four separate color-ringed figures on corner/street squares at 1440/1000/820/390/320 widths, actual keyboard/click flows, purchases and rents, purchase declines for 2–4 players, legacy save migration, direct LOS, construction, mortgages, consent trades including cards, mortgage transfer choices, jail debt, card movement, bankruptcy/win, reload persistence and 1440/390/320 layouts, and fails on console/page/HTTP errors.
+Set `CHROMIUM_PATH` to an existing browser executable when appropriate, `GAME_URL` for a different server, and `SCREENSHOT_DIR` for optional desktop/mobile captures. This checks figure selection/swaps, 44px selection targets, unchanged legacy saves, four separate color-ringed figures on corner/street squares contained within their fields at 1440/1024/1000/820/768/390/320 widths, actual keyboard/click flows, purchases and rents, purchase declines for 2–4 players, legacy save migration, direct LOS, construction, mortgages, consent trades including cards, mortgage transfer choices, jail debt, card movement, bankruptcy/win, reload persistence and 1440/390/320 layouts, and fails on console/page/HTTP errors.
+
+
+The same environment variables work with `node scripts/ui-consistency.mjs`. This focused browser suite checks setup, populated games, all action states and dialog types at 320/390/768/1024/1440 widths, shared spacing and panel padding, aligned page shells, 44px controls, stable hover geometry, visible focus, modal feedback, trade validation, export, save failures and 200% text scaling. Both browser suites share `scripts/ui-geometry.mjs`.
+
+`style.css` owns the UI tokens: 4/8/12/16/24/32/48px spacing, 12px panels/dialogs, 8px controls, a 44px minimum control height, forest/ivory surfaces, system sans labels and Georgia headings. Components precede responsive adjustments in one stylesheet. The miniature board has a separate proportional scale; occupied tracks reserve room for pieces. On phones pieces cover the miniature field label; the accessible field overview and deed dialog retain all names, prices and management actions. Only dynamic colors and board coordinates/tracks are supplied through inline custom properties.
 
 ## GitHub Pages
 

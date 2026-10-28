@@ -1,5 +1,6 @@
 // Optional developer check. Playwright and Chromium are tooling, never shipped to players.
 import assert from "node:assert/strict";
+import { checkGeometry } from "./ui-geometry.mjs";
 const { chromium } = await import(
   process.env.PLAYWRIGHT_MODULE || "playwright"
 );
@@ -45,6 +46,7 @@ async function fixture(config = {}) {
     localStorage.setItem("stadtvermoegen-v1", JSON.stringify(s));
   }, config);
   await page.reload();
+  await checkGeometry(page, "injected gameplay fixture");
   await page.evaluate(() => {
     let i = 0;
     Math.random = () => [0, 0.25][i++ % 2];
@@ -117,7 +119,7 @@ try {
       await page.evaluate(() => localStorage.getItem("stadtvermoegen-v1")),
       beforeLegacy,
     );
-    for (const width of [1440, 1000, 820, 390, 320]) {
+    for (const width of [1440, 1024, 1000, 820, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       const figures = page.locator(`.square[data-square="${position}"] .token`);
       assert.equal(await figures.count(), 4);
@@ -149,6 +151,10 @@ try {
           );
         }),
       );
+      assert.ok(await figures.evaluateAll(es=>es.every(e=>{
+        const r=e.getBoundingClientRect(), cell=e.closest('.square').getBoundingClientRect();
+        return r.left>=cell.left && r.right<=cell.right && r.top>=cell.top && r.bottom<=cell.bottom;
+      })), `crowded figures must stay inside their field at ${width}px`);
       assert.equal(
         await page.evaluate(
           () => document.documentElement.scrollWidth > innerWidth,
@@ -414,7 +420,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: pictorial setup and swaps, 44px targets, unchanged legacy saves, four crowded figures at 5 widths, setup 4 players, keyboard dice, buy/rent, decline, legacy migration, direct LOS, buildings, mortgage, consent trade/cards, transfer interest and debt precedence (4 variants with reload), jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
+    "PASS: pictorial setup and swaps, 44px targets, unchanged legacy saves, four crowded figures contained in their field at 7 widths, setup 4 players, keyboard dice, buy/rent, decline, legacy migration, direct LOS, buildings, mortgage, consent trade/cards, transfer interest and debt precedence (4 variants with reload), jail debt, card movement, bankruptcy/win, save/reload during animation, desktop/390/320 layouts. No console, page or HTTP errors.",
   );
 } finally {
   await browser.close();
